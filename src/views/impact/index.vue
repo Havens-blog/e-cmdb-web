@@ -3,17 +3,36 @@ import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts'
 import { getImpactApi, type ImpactGraph } from '@/api/impact'
-import { Search, Aim } from '@element-plus/icons-vue'
+import { listCmdbInstancesApi } from '@/api'
+import { Aim, Search } from '@element-plus/icons-vue'
 
-const instanceId = ref<number | null>(null)
 const depth = ref(3)
 const loading = ref(false)
 const graph = ref<ImpactGraph | null>(null)
 const chartRef = ref<HTMLDivElement>()
 let chart: echarts.ECharts | null = null
 
+// 实例远程搜索（按 asset_name 检索，选中后取其数字 ID 做影响分析）
+const instanceId = ref<number | null>(null)
+const instanceOptions = ref<Array<{ id: number; asset_name?: string; asset_id: string; uid: string }>>([])
+const searchLoading = ref(false)
+
+async function searchInstances(query: string) {
+    if (!query) { instanceOptions.value = []; return }
+    searchLoading.value = true
+    try {
+        const res = await listCmdbInstancesApi({ asset_name: query, limit: 20 } as any)
+        const data = res.data as any
+        instanceOptions.value = data?.data?.instances || data?.instances || data?.list || []
+    } catch {
+        instanceOptions.value = []
+    } finally {
+        searchLoading.value = false
+    }
+}
+
 async function analyze() {
-    if (!instanceId.value) { ElMessage.warning('请输入实例 ID'); return }
+    if (!instanceId.value) { ElMessage.warning('请先搜索并选择实例'); return }
     loading.value = true
     try {
         const resp = await getImpactApi({ instance_id: instanceId.value, depth: depth.value })
@@ -73,7 +92,28 @@ onBeforeUnmount(() => { window.removeEventListener('resize', onResize); chart?.d
     </div>
 
     <div class="query-bar">
-      <el-input v-model.number="instanceId" placeholder="输入实例 ID" class="id-input" :prefix-icon="Search" clearable @keyup.enter="analyze" />
+      <el-select
+        v-model="instanceId"
+        filterable
+        remote
+        clearable
+        placeholder="搜索实例名称（asset_name）"
+        :remote-method="searchInstances"
+        :loading="searchLoading"
+        class="instance-select"
+      >
+        <el-option
+          v-for="i in instanceOptions"
+          :key="i.id"
+          :value="i.id"
+          :label="i.asset_name || i.asset_id"
+        >
+          <div class="option-row">
+            <span>{{ i.asset_name || i.asset_id }}</span>
+            <code class="option-id">{{ i.asset_id }}</code>
+          </div>
+        </el-option>
+      </el-select>
       <el-input-number v-model="depth" :min="1" :max="10" class="depth-input" />
       <el-button type="primary" :icon="Aim" :loading="loading" @click="analyze">分析</el-button>
     </div>
@@ -97,8 +137,8 @@ onBeforeUnmount(() => { window.removeEventListener('resize', onResize); chart?.d
     </div>
 
     <div v-else class="empty-hint">
-      <el-icon :size="40"><Aim /></el-icon>
-      <p>输入实例 ID 开始分析</p>
+      <el-icon :size="40"><Search /></el-icon>
+      <p>搜索并选择一个实例，分析它的上下游影响</p>
     </div>
   </div>
 </template>
@@ -111,8 +151,16 @@ onBeforeUnmount(() => { window.removeEventListener('resize', onResize); chart?.d
 .page-subtitle { font-size: 13px; color: var(--text-tertiary); margin: 0; }
 
 .query-bar { display: flex; gap: 12px; align-items: center; margin-bottom: 24px; }
-.id-input { width: 280px; }
-.depth-input { width: 120px; }
+.instance-select { width: 320px; }
+.depth-input { width: 110px; }
+
+.option-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  .option-id { font-size: 11px; color: var(--text-tertiary); font-family: var(--font-mono); }
+}
 
 .result { }
 .result-stats {

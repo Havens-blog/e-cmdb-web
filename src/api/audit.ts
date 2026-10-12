@@ -4,24 +4,32 @@
  */
 import instance from './request/service'
 
-// ==================== 类型 ====================
+// ==================== 类型（对齐 e-cam audit/domain ChangeRecord） ====================
 export interface ChangeRecord {
-    id?: number
-    asset_id?: string
-    field_name?: string
-    old_value?: any
-    new_value?: any
-    change_source?: string
-    change_task_id?: string
-    operator?: string
-    create_time?: number
+    id: number
+    asset_id: string
+    asset_name: string
+    model_uid: string
+    tenant_id: number
+    account_id: number
+    provider: string
+    region: string
+    field_name: string
+    /** JSON 序列化字符串 */
+    old_value: string
+    /** JSON 序列化字符串 */
+    new_value: string
+    change_source: string
+    change_task_id: string
+    /** 变更时间（Unix 毫秒） */
+    ctime: number
 }
 
 export interface ChangeSummary {
-    total?: number
-    by_model?: Record<string, number>
-    by_field?: Record<string, number>
-    by_provider?: Record<string, number>
+    total: number
+    by_resource_type: Record<string, number>
+    by_field: Record<string, number>
+    by_provider: Record<string, number>
 }
 
 export interface ChangeList {

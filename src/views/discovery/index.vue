@@ -1,134 +1,306 @@
 <script setup lang="ts">
-// 发现同步：多云发现/同步能力已由 e-cam-service 实现（cert 域 discovery import 编排，
-// 含 scan→enumerate→import→失败隔离）。CMDB 作为整合层复用该能力，此处提供来源
-// 概览与入口，不重复实现同步逻辑。
-import { Cloudy, Monitor, Upload, Document, ArrowRight } from '@element-plus/icons-vue'
+// 发现同步：真实对接 e-cam-service 多云证书发现导入编排（编排层转发）。
+// 流程：snapshot-status（快照状态/引导）→ sync（手动触发增量同步）→
+//       preview（基于最近 done 快照的预览清单）→ 勾选 import（创建会话，202）→
+//       import/:sessionId 进度轮询至终态。
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { ElMessage } from 'element-plus'
+import {
+    getDiscoveryPreviewApi, getSnapshotStatusApi, createDiscoveryImportApi,
+    getImportSessionApi, triggerDiscoverySyncApi,
+    type DiscoveryPreviewEntry, type DiscoverySnapshotStatus, type DiscoveryImportSession,
+} from '@/api/discovery'
+import { Cloudy, RefreshRight, VideoPlay } from '@element-plus/icons-vue'
 
-const sources = [
-    {
-        key: 'cloud_api',
-        label: '多云 API 发现',
-        desc: 'AWS / 阿里云 / 腾讯云 / 火山引擎等云厂商 API 同步（复用 e-cam-service 编排）',
-        icon: Cloudy,
-        color: 'var(--accent-blue)',
-        status: '已复用',
-    },
-    {
-        key: 'agent',
-        label: 'Agent 采集',
-        desc: '主机内 Agent 上报资源与配置（复用 e-cam-service 采集能力）',
-        icon: Monitor,
-        color: 'var(--accent-cyan)',
-        status: '已复用',
-    },
-    {
-        key: 'declaration',
-        label: '声明式导入',
-        desc: 'YAML/JSON 声明文件批量导入拓扑与关系',
-        icon: Upload,
-        color: 'var(--accent-purple)',
-        status: '规划中',
-    },
-    {
-        key: 'excel',
-        label: 'Excel 导入',
-        desc: '表格批量导入实例与属性',
-        icon: Document,
-        color: 'var(--accent-green)',
-        status: '规划中',
-    },
-]
+const loading = ref(false)
+const syncing = ref(false)
+const snapshot = ref<DiscoverySnapshotStatus | null>(null)
+const entries = ref<DiscoveryPreviewEntry[]>([])
+const snapshotId = ref('')
+const snapshotStartedAt = ref('')
+const noSnapshot = ref(false)
+const selected = ref<DiscoveryPreviewEntry[]>([])
+
+// 导入会话进度
+const sessionVisible = ref(false)
+const session = ref<DiscoveryImportSession | null>(null)
+let pollTimer: ReturnType<typeof setInterval> | null = null
+
+const providerLabel = (c: string) => ({ aliyun: '阿里云', tencent: '腾讯云', aws: 'AWS', azure: 'Azure', huawei: '华为云', volcano: '火山引擎' }[c] || c)
+
+async function load() {
+    loading.value = true
+    noSnapshot.value = false
+    try {
+        // 快照状态（空态不视为错误）
+        try {
+            const s = await getSnapshotStatusApi()
+            snapshot.value = s.data
+        } catch { snapshot.value = null }
+        // 预览（无 done 快照 → 上游 409，信封 code=409 引导触发同步）
+        try {
+            const resp = await getDiscoveryPreviewApi()
+            entries.value = resp.data.items || []
+            snapshotId.value = resp.data.snapshotId || ''
+            snapshotStartedAt.value = resp.data.snapshotStartedAt || ''
+        } catch (e: any) {
+            entries.value = []
+            if (String(e?.message || '').includes('SNAPSHOT') || e?.code === 409) noSnapshot.value = true
+            else throw e
+        }
+    } catch (e: any) {
+        ElMessage.error(e?.message || '加载发现预览失败')
+    } finally {
+        loading.value = false
+    }
+}
+
+async function handleSync() {
+    syncing.value = true
+    try {
+        await triggerDiscoverySyncApi()
+        ElMessage.success('增量同步已触发完成，正在刷新预览')
+        await load()
+    } catch (e: any) {
+        ElMessage.error(e?.message || '触发同步失败（需要 OpsEngineer 角色）')
+    } finally {
+        syncing.value = false
+    }
+}
+
+const selectable = (row: DiscoveryPreviewEntry) => row.parseable && !row.inLedger
+
+async function handleImport() {
+    if (selected.value.length === 0) return
+    try {
+        const resp = await createDiscoveryImportApi(selected.value.map(e => ({
+            cloud: e.cloud, accountKey: e.accountKey, cloudCertId: e.cloudCertId,
+        })))
+        session.value = resp.data
+        sessionVisible.value = true
+        startPolling(resp.data.sessionId)
+    } catch (e: any) {
+        ElMessage.error(e?.message || '创建导入会话失败')
+    }
+}
+
+function startPolling(sessionId: string) {
+    stopPolling()
+    pollTimer = setInterval(async () => {
+        try {
+            const resp = await getImportSessionApi(sessionId)
+            session.value = resp.data
+            if (resp.data.status !== 'running') {
+                stopPolling()
+                if (resp.data.status === 'completed') ElMessage.success('导入全部成功')
+                else ElMessage.warning('导入部分失败，可查看失败原因后重试')
+                await load()
+            }
+        } catch { /* 轮询失败静默，下次重试 */ }
+    }, 2000)
+}
+function stopPolling() { if (pollTimer) { clearInterval(pollTimer); pollTimer = null } }
+
+const sessionDone = computed(() => session.value && session.value.status !== 'running')
+
+function fmtTime(iso?: string) {
+    if (!iso) return '—'
+    const d = new Date(iso)
+    return isNaN(d.getTime()) ? iso : d.toLocaleString()
+}
+
+function fmtNotAfter(v: string) {
+    if (!v) return '—'
+    const d = new Date(v)
+    return isNaN(d.getTime()) ? v : d.toLocaleDateString()
+}
+
+onMounted(load)
+onBeforeUnmount(stopPolling)
 </script>
 
 <template>
-  <div class="discovery">
+  <div class="discovery" v-loading="loading">
     <div class="page-head">
-      <h1 class="page-title">发现同步</h1>
-      <p class="page-subtitle">配置数据的自动发现与同步来源</p>
-    </div>
-
-    <div class="notice">
-      <div class="notice-title">多云同步已实现</div>
-      <p class="notice-body">
-        多云发现/同步编排能力已由 e-cam-service 实现（scan → enumerate → import → 失败隔离），
-        CMDB 作为整合层复用该能力，不在此重复造轮子。
-      </p>
-    </div>
-
-    <div class="source-grid">
-      <div v-for="s in sources" :key="s.key" class="source-card">
-        <div class="source-icon" :style="{ color: s.color }">
-          <el-icon :size="22"><component :is="s.icon" /></el-icon>
-        </div>
-        <div class="source-meta">
-          <div class="source-head">
-            <span class="source-label">{{ s.label }}</span>
-            <span class="source-status" :class="{ reused: s.status === '已复用' }">{{ s.status }}</span>
-          </div>
-          <p class="source-desc">{{ s.desc }}</p>
-        </div>
-        <el-icon class="source-arrow"><ArrowRight /></el-icon>
+      <div>
+        <h1 class="page-title">发现同步</h1>
+        <p class="page-subtitle">多云证书发现导入（复用 e-cam-service 发现编排：扫描 → 预览 → 导入）</p>
+      </div>
+      <div class="head-actions">
+        <el-button :icon="VideoPlay" :loading="syncing" @click="handleSync">触发增量同步</el-button>
+        <el-button :icon="RefreshRight" circle @click="load" />
       </div>
     </div>
+
+    <!-- 快照状态条 -->
+    <div class="snapshot-bar">
+      <div class="snapshot-item">
+        <span class="s-label">快照状态</span>
+        <span class="s-value" :class="snapshot?.status || ''">
+          {{ !snapshot?.hasSnapshot ? '无快照' : snapshot.status === 'done' ? '就绪' : snapshot.status === 'running' ? '扫描中' : snapshot.status === 'failed' ? '失败' : '—' }}
+        </span>
+      </div>
+      <div class="snapshot-item">
+        <span class="s-label">快照时间</span>
+        <span class="s-value">{{ fmtTime(snapshotStartedAt || snapshot?.startedAt) }}</span>
+      </div>
+      <div class="snapshot-item" v-if="snapshotId">
+        <span class="s-label">快照 ID</span>
+        <code class="s-value mono">{{ snapshotId.slice(-8) }}</code>
+      </div>
+      <div class="snapshot-item" v-if="snapshot?.failReason">
+        <span class="s-label">失败原因</span>
+        <span class="s-value warn">{{ snapshot.failReason }}</span>
+      </div>
+    </div>
+
+    <!-- 无快照引导 -->
+    <div v-if="noSnapshot" class="empty-guide">
+      <el-icon :size="40"><Cloudy /></el-icon>
+      <p>尚无可用的发现快照——请先点击右上角「触发增量同步」完成一轮多云扫描</p>
+    </div>
+
+    <!-- 预览清单 -->
+    <template v-else>
+      <div class="table-head">
+        <span class="table-title">发现清单（{{ entries.length }}）</span>
+        <el-button type="primary" size="small" :disabled="selected.length === 0" @click="handleImport">
+          导入选中（{{ selected.length }}）
+        </el-button>
+      </div>
+
+      <el-table
+        :data="entries"
+        style="width: 100%"
+        @selection-change="(rows: DiscoveryPreviewEntry[]) => selected = rows"
+      >
+        <el-table-column type="selection" width="42" :selectable="selectable" />
+        <el-table-column label="云厂商" width="110">
+          <template #default="{ row }">{{ providerLabel(row.cloud) }}</template>
+        </el-table-column>
+        <el-table-column prop="accountKey" label="云账号" min-width="120" show-overflow-tooltip />
+        <el-table-column prop="cloudCertId" label="云证书 ID" min-width="180" show-overflow-tooltip />
+        <el-table-column label="名称" min-width="160" show-overflow-tooltip>
+          <template #default="{ row }">{{ row.label || '—' }}</template>
+        </el-table-column>
+        <el-table-column prop="refCount" label="关联资源" width="90" align="center" />
+        <el-table-column label="台账到期" width="120">
+          <template #default="{ row }">{{ row.inLedger ? fmtNotAfter(row.notAfter) : '—' }}</template>
+        </el-table-column>
+        <el-table-column label="状态" width="110">
+          <template #default="{ row }">
+            <el-tag v-if="row.inLedger" type="success" size="small">已入库</el-tag>
+            <el-tag v-else-if="!row.parseable" type="info" size="small">不可解析</el-tag>
+            <el-tag v-else type="warning" size="small">待导入</el-tag>
+          </template>
+        </el-table-column>
+      </el-table>
+    </template>
+
+    <!-- 导入进度对话框 -->
+    <el-dialog v-model="sessionVisible" title="导入进度" width="560px" :close-on-click-modal="!sessionDone">
+      <div v-if="session" class="session">
+        <el-progress
+          :percentage="session.progress.total ? Math.round(((session.progress.succeeded + session.progress.failed) / session.progress.total) * 100) : 0"
+          :status="session.status === 'completed' ? 'success' : session.status === 'partial_failed' ? 'warning' : undefined"
+        />
+        <div class="session-stats">
+          <span>共 {{ session.progress.total }}</span>
+          <span class="ok">成功 {{ session.progress.succeeded }}</span>
+          <span class="fail">失败 {{ session.progress.failed }}</span>
+          <el-tag size="small" :type="session.status === 'running' ? 'primary' : session.status === 'completed' ? 'success' : 'warning'">
+            {{ session.status === 'running' ? '导入中' : session.status === 'completed' ? '已完成' : '部分失败' }}
+          </el-tag>
+        </div>
+        <el-table :data="session.items" size="small" max-height="280">
+          <el-table-column label="云厂商" width="90">
+            <template #default="{ row }">{{ providerLabel(row.cloud) }}</template>
+          </el-table-column>
+          <el-table-column prop="cloudCertId" label="云证书 ID" min-width="160" show-overflow-tooltip />
+          <el-table-column label="结果" width="150">
+            <template #default="{ row }">
+              <el-tag v-if="row.result === 'success'" type="success" size="small">成功</el-tag>
+              <el-tag v-else-if="row.result === 'failed'" type="danger" size="small">失败</el-tag>
+              <el-tag v-else size="small">等待</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="说明" min-width="140" show-overflow-tooltip>
+            <template #default="{ row }">{{ row.errorReason || row.mappedCertId || '—' }}</template>
+          </el-table-column>
+        </el-table>
+      </div>
+      <template #footer>
+        <el-button :disabled="!sessionDone" type="primary" @click="sessionVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <style scoped lang="scss">
-.discovery { max-width: 900px; }
+.discovery { max-width: 1200px; }
 
-.page-head { margin-bottom: 24px; }
+.page-head { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 20px; }
 .page-title { font-size: 22px; font-weight: 600; margin: 0 0 4px; letter-spacing: -0.01em; }
 .page-subtitle { font-size: 13px; color: var(--text-tertiary); margin: 0; }
+.head-actions { margin-left: auto; display: flex; gap: 10px; }
 
-.notice {
-  padding: 16px 20px;
-  background: rgba(113, 112, 255, 0.06);
-  border: 1px solid rgba(113, 112, 255, 0.2);
-  border-radius: 10px;
+.snapshot-bar {
+  display: flex;
+  gap: 14px;
   margin-bottom: 20px;
 }
-.notice-title { font-size: 14px; font-weight: 600; color: var(--accent-blue); margin-bottom: 6px; }
-.notice-body { font-size: 13px; color: var(--text-secondary); margin: 0; line-height: 1.6; }
-
-.source-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 14px;
-}
-
-.source-card {
+.snapshot-item {
   display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  padding: 18px;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 18px;
   background: var(--bg-elevated);
   border: 1px solid var(--border-subtle);
   border-radius: 10px;
-  transition: all 150ms ease;
-
-  &:hover { border-color: var(--border-strong); }
+  min-width: 130px;
+}
+.s-label { font-size: 11px; color: var(--text-tertiary); }
+.s-value { font-size: 14px; font-weight: 500;
+  &.running { color: var(--accent-blue); }
+  &.done { color: var(--accent-green); }
+  &.failed { color: var(--accent-red); }
+  &.warn { color: var(--accent-yellow); font-weight: 400; font-size: 12.5px; }
+  &.mono { font-family: var(--font-mono); }
 }
 
-.source-icon {
-  width: 44px; height: 44px;
-  display: flex; align-items: center; justify-content: center;
-  background: rgba(255, 255, 255, 0.04);
-  border-radius: 10px;
-  flex-shrink: 0;
-}
-
-.source-meta { flex: 1; }
-.source-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
-.source-label { font-size: 14px; font-weight: 500; }
-.source-status {
-  font-size: 11px;
-  padding: 2px 8px;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.06);
+.empty-guide {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 64px;
   color: var(--text-tertiary);
-
-  &.reused { background: rgba(16, 185, 129, 0.12); color: var(--accent-green); }
+  font-size: 14px;
+  background: var(--bg-elevated);
+  border: 1px dashed var(--border-base);
+  border-radius: 12px;
 }
-.source-desc { font-size: 12.5px; color: var(--text-tertiary); margin: 0; line-height: 1.5; }
-.source-arrow { color: var(--text-tertiary); margin-top: 12px; font-size: 14px; }
+
+.table-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.table-title { font-size: 15px; font-weight: 600; }
+
+.session {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.session-stats {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  .ok { color: var(--accent-green); }
+  .fail { color: var(--accent-red); }
+}
 </style>

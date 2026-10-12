@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { listCmdbModelsApi, listCmdbInstancesApi } from '@/api'
+import { listCmdbModelsApi, listCmdbInstancesApi, listInstanceRelationsApi } from '@/api'
 import { getQualityOverviewApi, type QualityOverview } from '@/api/quality'
 import {
     Box, Connection, Grid, Aim, Timer, CircleCheck, ArrowRight
@@ -12,13 +12,14 @@ const router = useRouter()
 const loading = ref(true)
 const modelCount = ref(0)
 const instanceCount = ref(0)
+const relationCount = ref(0)
 const quality = ref<QualityOverview | null>(null)
 
 const stats = computed(() => [
     { label: '资源模型', value: modelCount.value, icon: Grid, color: 'var(--accent-blue)', path: '/models' },
     { label: '资源实例', value: instanceCount.value, icon: Box, color: 'var(--accent-cyan)', path: '/instances' },
+    { label: '实例关系', value: relationCount.value, icon: Connection, color: 'var(--accent-purple)', path: '/relations' },
     { label: '数据健康度', value: quality.value ? `${Math.round(quality.value.health_score)}%` : '—', icon: CircleCheck, color: 'var(--accent-green)', path: '/quality' },
-    { label: '待处理问题', value: quality.value ? (quality.value.orphan_count + quality.value.missing_field_count + quality.value.dangling_relation_count) : 0, icon: Aim, color: 'var(--accent-yellow)', path: '/quality' },
 ])
 
 const entries = [
@@ -33,13 +34,15 @@ const entries = [
 async function load() {
     loading.value = true
     try {
-        const [models, instances, q] = await Promise.allSettled([
+        const [models, instances, relations, q] = await Promise.allSettled([
             listCmdbModelsApi({ limit: 1 }),
             listCmdbInstancesApi({ limit: 1 }),
+            listInstanceRelationsApi({ limit: 1 } as any),
             getQualityOverviewApi(),
         ])
         if (models.status === 'fulfilled') modelCount.value = (models.value as any)?.data?.total ?? 0
         if (instances.status === 'fulfilled') instanceCount.value = (instances.value as any)?.data?.total ?? 0
+        if (relations.status === 'fulfilled') relationCount.value = (relations.value as any)?.data?.data?.total ?? (relations.value as any)?.data?.total ?? 0
         if (q.status === 'fulfilled') quality.value = (q.value as any)?.data ?? null
     } finally {
         loading.value = false
