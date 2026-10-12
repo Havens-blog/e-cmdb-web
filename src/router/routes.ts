@@ -43,9 +43,15 @@ const routes: RouteRecordRaw[] = [
             },
             {
                 path: 'topology',
-                name: 'CmdbTopology',
+                name: 'ResourceTopology',
+                component: () => import('@/views/topology/index.vue'),
+                meta: { title: '资源拓扑', icon: 'Share' },
+            },
+            {
+                path: 'model-topology',
+                name: 'ModelTopology',
                 component: () => import('@/views/cmdb/topology/index.vue'),
-                meta: { title: '拓扑视图', icon: 'Share' },
+                meta: { title: '拓扑视图', icon: 'Share', hideInMenu: true },
             },
             // ==================== 服务树 ====================
             {
@@ -66,15 +72,9 @@ const routes: RouteRecordRaw[] = [
                 component: () => import('@/views/service-tree/rules/index.vue'),
                 meta: { title: '绑定规则', icon: 'List', hideInMenu: true },
             },
-            // ==================== 业务链路拓扑 ====================
-            // views/topology 为 e-cam 迁入的业务链路 DAG 拓扑，挂 link-topology
-            // 避让入口链接占用的 /cmdb/topology（拓扑视图）。
-            {
-                path: 'link-topology',
-                name: 'LinkTopology',
-                component: () => import('@/views/topology/index.vue'),
-                meta: { title: '业务链路拓扑', icon: 'Share', hideInMenu: true },
-            },
+            // ==================== 拓扑视图（模型/实例关系） ====================
+            // views/cmdb/topology 为 CMDB 原生的模型/实例拓扑，挂 model-topology，
+            // 避让入口链接 /cmdb/topology（控制台「资源拓扑」→ 实际链路页）。
             // ==================== 影响分析 ====================
             {
                 path: 'impact',

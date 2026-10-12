@@ -35,7 +35,8 @@ const navGroups: NavGroup[] = [
     {
         title: '拓扑',
         items: [
-            { path: '/cmdb/topology', label: '拓扑视图', icon: Share },
+            { path: '/topology', label: '资源拓扑', icon: Share },
+            { path: '/model-topology', label: '拓扑视图', icon: Share },
             { path: '/service-tree', label: '服务树', icon: Connection },
             { path: '/impact', label: '影响分析', icon: Aim },
         ],
