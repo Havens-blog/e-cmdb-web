@@ -15,16 +15,16 @@ const instanceCount = ref(0)
 const quality = ref<QualityOverview | null>(null)
 
 const stats = computed(() => [
-    { label: '资源模型', value: modelCount.value, icon: Grid, color: 'var(--accent-blue)', path: '/cmdb/models' },
-    { label: '资源实例', value: instanceCount.value, icon: Box, color: 'var(--accent-cyan)', path: '/cmdb/instances' },
+    { label: '资源模型', value: modelCount.value, icon: Grid, color: 'var(--accent-blue)', path: '/models' },
+    { label: '资源实例', value: instanceCount.value, icon: Box, color: 'var(--accent-cyan)', path: '/instances' },
     { label: '数据健康度', value: quality.value ? `${Math.round(quality.value.health_score)}%` : '—', icon: CircleCheck, color: 'var(--accent-green)', path: '/quality' },
     { label: '待处理问题', value: quality.value ? (quality.value.orphan_count + quality.value.missing_field_count + quality.value.dangling_relation_count) : 0, icon: Aim, color: 'var(--accent-yellow)', path: '/quality' },
 ])
 
 const entries = [
-    { label: '资源模型', desc: '定义配置项的字段、分组与关系', icon: Grid, path: '/cmdb/models' },
-    { label: '资源实例', desc: '管理配置事实的实例数据', icon: Box, path: '/cmdb/instances' },
-    { label: '模型关系', desc: '定义模型间的拓扑关系类型', icon: Connection, path: '/cmdb/relations' },
+    { label: '资源模型', desc: '定义配置项的字段、分组与关系', icon: Grid, path: '/models' },
+    { label: '资源实例', desc: '管理配置事实的实例数据', icon: Box, path: '/instances' },
+    { label: '模型关系', desc: '定义模型间的拓扑关系类型', icon: Connection, path: '/relations' },
     { label: '影响分析', desc: '评估配置变更的波及范围', icon: Aim, path: '/impact' },
     { label: '变更审计', desc: '追溯每一次配置变更', icon: Timer, path: '/audit' },
     { label: '数据质量', desc: '持续评估数据完整性与一致性', icon: CircleCheck, path: '/quality' },

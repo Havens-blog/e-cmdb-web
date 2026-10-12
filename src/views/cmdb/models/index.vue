@@ -425,7 +425,7 @@ const handleViewDetail = (model: ModelVO) => {
 
 const handleModelAction = (command: string, model: ModelVO) => {
   if (command === 'edit') handleEditModel(model)
-  else if (command === 'instances') router.push({ path: '/cmdb/instances', query: { model_uid: model.uid } })
+  else if (command === 'instances') router.push({ path: '/instances', query: { model_uid: model.uid } })
   else if (command === 'delete') handleDeleteModel(model)
 }
 

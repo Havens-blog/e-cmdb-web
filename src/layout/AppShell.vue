@@ -27,9 +27,9 @@ const navGroups: NavGroup[] = [
     {
         title: '配置',
         items: [
-            { path: '/cmdb/models', label: '资源模型', icon: Grid },
-            { path: '/cmdb/instances', label: '资源实例', icon: Box },
-            { path: '/cmdb/relations', label: '模型关系', icon: Connection },
+            { path: '/models', label: '资源模型', icon: Grid },
+            { path: '/instances', label: '资源实例', icon: Box },
+            { path: '/relations', label: '模型关系', icon: Connection },
         ],
     },
     {

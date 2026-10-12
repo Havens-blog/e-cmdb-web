@@ -1,9 +1,9 @@
 <script setup lang="ts">
-// 应用壳：AppShell（深色侧边栏导航 + 内容 outlet）承接全部子路由，
-// 整合 CMDB 管理 / 服务树 / 拓扑 / 治理（审计·质量·影响分析）/ 开放 API 各页面。
-import AppShell from '@/layout/AppShell.vue'
+// 应用根：仅承载路由出口。导航壳由路由顶层 '/' 挂载的 AppShell 提供
+// （src/router/routes.ts），此处不得再包一层 AppShell——否则壳会渲染两次，
+// 出现两条侧边栏（该双壳 bug 已实测复现并修复）。
 </script>
 
 <template>
-  <AppShell />
+  <router-view />
 </template>

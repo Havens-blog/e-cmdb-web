@@ -250,7 +250,7 @@ function goAssetDetail() {
   const query: Record<string, string> = {}
   if (keyword) query.keyword = String(keyword)
   if (modelUID) query.model_uid = String(modelUID)
-  router.push({ path: '/cmdb/instances', query })
+  router.push({ path: '/instances', query })
 }
 
 function formatAttrValue(val: unknown): string {

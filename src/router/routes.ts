@@ -20,26 +20,29 @@ const routes: RouteRecordRaw[] = [
                 meta: { title: '仪表盘', icon: 'Odometer' },
             },
             // ==================== CMDB 管理 ====================
+            // 路径用单前缀（/cmdb/models 而非 /cmdb/cmdb/models）——
+            // 控制台 AppSwitcher 与云管 MainLayout 的入口链接均为 /cmdb/<page>，
+            // router base 已是 /cmdb/，子路径不能再带 cmdb/ 前缀。
             {
-                path: 'cmdb/models',
+                path: 'models',
                 name: 'CmdbModels',
                 component: () => import('@/views/cmdb/models/index.vue'),
                 meta: { title: '资源模型', icon: 'Grid' },
             },
             {
-                path: 'cmdb/instances',
+                path: 'instances',
                 name: 'CmdbInstances',
                 component: () => import('@/views/cmdb/instances/index.vue'),
                 meta: { title: '资源实例', icon: 'Box' },
             },
             {
-                path: 'cmdb/relations',
+                path: 'relations',
                 name: 'CmdbRelations',
                 component: () => import('@/views/cmdb/relations/index.vue'),
                 meta: { title: '模型关系', icon: 'Connection' },
             },
             {
-                path: 'cmdb/topology',
+                path: 'topology',
                 name: 'CmdbTopology',
                 component: () => import('@/views/cmdb/topology/index.vue'),
                 meta: { title: '拓扑视图', icon: 'Share' },
@@ -63,12 +66,14 @@ const routes: RouteRecordRaw[] = [
                 component: () => import('@/views/service-tree/rules/index.vue'),
                 meta: { title: '绑定规则', icon: 'List', hideInMenu: true },
             },
-            // ==================== 资源拓扑 ====================
+            // ==================== 业务链路拓扑 ====================
+            // views/topology 为 e-cam 迁入的业务链路 DAG 拓扑，挂 link-topology
+            // 避让入口链接占用的 /cmdb/topology（拓扑视图）。
             {
-                path: 'topology',
-                name: 'Topology',
+                path: 'link-topology',
+                name: 'LinkTopology',
                 component: () => import('@/views/topology/index.vue'),
-                meta: { title: '资源拓扑', icon: 'Share', hideInMenu: true },
+                meta: { title: '业务链路拓扑', icon: 'Share', hideInMenu: true },
             },
             // ==================== 影响分析 ====================
             {
