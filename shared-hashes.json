@@ -1,0 +1,237 @@
+{
+  "sourceRepo": "e-cam-web",
+  "sourceRepoRoot": "../e-cam-web",
+  "registeredAt": "2026-10-13",
+  "note": "e-cmdb-web 的拷贝面漂移防线。与 haven-console 同构：逐条登记与 e-cam-web 逐字节相同的文件 × sha256 × 源仓 commit，CI/本地脚本从 e-cam-web 重算 sha256 比对，源文件一变即红，强制\"人工评估 → 同步或显式分叉 → 更新登记\"三步走。",
+  "rules": [
+    "登记范围 = 语义上属于\"平台统一口径\"的共享面：主题令牌、请求层、通用组件、跨页共享词汇。",
+    "不登记构建脚手架（tsconfig*.json 等）——它们的\"相同\"来自模板而非约定，各仓按需不同不应触发漂移流程。",
+    "sha256 一律登记源文件的 LF 形态（跨平台确定）；drift-check.mjs 同时计算 LF/CRLF 两种形态，任一匹配即视为未漂移。"
+  ],
+  "files": [
+    {
+      "path": "public/xirang-mark.svg",
+      "sourcePath": "public/xirang-mark.svg",
+      "category": "asset",
+      "sourceCommit": "76b9faeaf0375ceff43bfe005f88bc873a9d03e5",
+      "sourceCommitDate": "2026-10-13",
+      "sha256": "fed0c130e78a975717b84a2f090cea22521372cf8a18538a7826d8493cef0bd3"
+    },
+    {
+      "path": "src/api/dns.ts",
+      "sourcePath": "src/api/dns.ts",
+      "category": "request-layer",
+      "sourceCommit": "1741ad0d442f8cc4db0c8018188b286c702695a3",
+      "sourceCommitDate": "2026-04-21",
+      "sha256": "20cf18dbf967755be50739c6497459aa318a707f1e47aa5e5636f6e930682e39"
+    },
+    {
+      "path": "src/api/request/cert.ts",
+      "sourcePath": "src/api/request/cert.ts",
+      "category": "request-layer",
+      "sourceCommit": "559435abc2cd8b259ba0d2b53cf5860494d1523b",
+      "sourceCommitDate": "2026-08-19",
+      "sha256": "439f92d770bc08d0f2b0be2e79371897537337cbd84ccd65e95724b2a9163d49"
+    },
+    {
+      "path": "src/api/request/eiam.ts",
+      "sourcePath": "src/api/request/eiam.ts",
+      "category": "request-layer",
+      "sourceCommit": "a6ca24e4ebfd4d390685aea69a7b3efadfa930de",
+      "sourceCommitDate": "2026-08-11",
+      "sha256": "3c08734545a35dd6be9e34243e06d4679486d3faf833a8073baee6ac4b48a267"
+    },
+    {
+      "path": "src/api/request/index.ts",
+      "sourcePath": "src/api/request/index.ts",
+      "category": "request-layer",
+      "sourceCommit": "644517da55a4038507098007a0f88d95efd4b36e",
+      "sourceCommitDate": "2026-09-30",
+      "sha256": "4f6560bf15250672fc3de239541b13e70b078c653e5ddb489b6ceee774be7364"
+    },
+    {
+      "path": "src/api/request/types.ts",
+      "sourcePath": "src/api/request/types.ts",
+      "category": "request-layer",
+      "sourceCommit": "ab809ae3ba18f29fce476c62884db37b4966f446",
+      "sourceCommitDate": "2025-11-06",
+      "sha256": "eb2b75484fcb3ae34329ffbd14df93b0ee2f5eecf7cd00c5886e69944ab6f7d1"
+    },
+    {
+      "path": "src/api/types/asset.ts",
+      "sourcePath": "src/api/types/asset.ts",
+      "category": "request-layer",
+      "sourceCommit": "b43ed4d2e17a5173b5f6e7022d34b47264191fff",
+      "sourceCommitDate": "2026-09-07",
+      "sha256": "eb74d17d961f3f746a20a023cca30768e2bc3c8902f46b44b84f5827c7f78d4e"
+    },
+    {
+      "path": "src/api/types/dns.ts",
+      "sourcePath": "src/api/types/dns.ts",
+      "category": "request-layer",
+      "sourceCommit": "1741ad0d442f8cc4db0c8018188b286c702695a3",
+      "sourceCommitDate": "2026-04-21",
+      "sha256": "b7b7fe70bbb87456da9baf8f9280568a5f7aeba3bdfdde9e25977e8d80cac0e3"
+    },
+    {
+      "path": "src/assets/styles/element-theme.scss",
+      "sourcePath": "src/assets/styles/element-theme.scss",
+      "category": "design-tokens",
+      "sourceCommit": "08904e9d0a21f4239f06f6e46e00388835155f2e",
+      "sourceCommitDate": "2026-09-21",
+      "sha256": "06f97f8ba2fea0bf3264c85c799dde1d43aed721cf43c8c361b5818b1e13cd89"
+    },
+    {
+      "path": "src/assets/styles/index.scss",
+      "sourcePath": "src/assets/styles/index.scss",
+      "category": "design-tokens",
+      "sourceCommit": "ff629baa13e9ba927bc5d22b06da8bd27b226abc",
+      "sourceCommitDate": "2026-09-20",
+      "sha256": "fdeebced75613f84dfb721f1374aa61236f31c664dc8be56f3e8fbbc45b866f2"
+    },
+    {
+      "path": "src/assets/styles/mixins.scss",
+      "sourcePath": "src/assets/styles/mixins.scss",
+      "category": "design-tokens",
+      "sourceCommit": "08de2a10c3f1a9bb1622229a37117cabe977e8ef",
+      "sourceCommitDate": "2026-01-21",
+      "sha256": "2bab4b2b0561e67e96bcd6b28e2c7d58e17302bfe6a8a4f671ebaf9ab154674c"
+    },
+    {
+      "path": "src/assets/styles/pages-dark.scss",
+      "sourcePath": "src/assets/styles/pages-dark.scss",
+      "category": "design-tokens",
+      "sourceCommit": "08de2a10c3f1a9bb1622229a37117cabe977e8ef",
+      "sourceCommitDate": "2026-01-21",
+      "sha256": "78fdb17b94d336d9b3ac8b31797520323c6b1efb8a1ae6547761420925486c29"
+    },
+    {
+      "path": "src/assets/styles/theme-variables.scss",
+      "sourcePath": "src/assets/styles/theme-variables.scss",
+      "category": "design-tokens",
+      "sourceCommit": "d28829e0d119666ae0ca9c4d4129e9d29e83dc0e",
+      "sourceCommitDate": "2026-09-20",
+      "sha256": "7c9a007dbf563859dcd577784d1382bca91ed662514066a09bc7c96563d337fc"
+    },
+    {
+      "path": "src/assets/styles/variables.scss",
+      "sourcePath": "src/assets/styles/variables.scss",
+      "category": "design-tokens",
+      "sourceCommit": "d28829e0d119666ae0ca9c4d4129e9d29e83dc0e",
+      "sourceCommitDate": "2026-09-20",
+      "sha256": "81b07fc90ea6fd330c8bdf8851b4edbe32c87d95f3afb057c23cae5aa8613234"
+    },
+    {
+      "path": "src/components/AssetExportDialog.vue",
+      "sourcePath": "src/components/AssetExportDialog.vue",
+      "category": "component",
+      "sourceCommit": "fc0b2e45757aa6d0a16516d8127aec94d26a486f",
+      "sourceCommitDate": "2026-09-21",
+      "sha256": "73d55b22383f2692fea04d231a81c3239475c51aa3d71dfaac2aca9b79a1f2a2"
+    },
+    {
+      "path": "src/components/CustomIconSelect/constants.ts",
+      "sourcePath": "src/components/CustomIconSelect/constants.ts",
+      "category": "component",
+      "sourceCommit": "cd1b3f777b444a45c3c0bab322c76c1d89fce97e",
+      "sourceCommitDate": "2026-03-05",
+      "sha256": "780efce25372d9d6a3dcf9527d61a4d744d5c7466f38c1e3f007c4ed1aaec4b5"
+    },
+    {
+      "path": "src/components/CustomIconSelect/index.vue",
+      "sourcePath": "src/components/CustomIconSelect/index.vue",
+      "category": "component",
+      "sourceCommit": "282cefdddc512b1a8309e25028b48dad9580e3da",
+      "sourceCommitDate": "2026-09-07",
+      "sha256": "14e77408cf62710270f0fa78d393756a7625c9aec0219f866b63ecc337aeff03"
+    },
+    {
+      "path": "src/components/IconFont/index.vue",
+      "sourcePath": "src/components/IconFont/index.vue",
+      "category": "component",
+      "sourceCommit": "cd1b3f777b444a45c3c0bab322c76c1d89fce97e",
+      "sourceCommitDate": "2026-03-05",
+      "sha256": "1a4357c3b4d10e260b19f7ff18ec22803c2d31edda6aeff111b9c898743023f8"
+    },
+    {
+      "path": "src/components/ManagerHeader/index.vue",
+      "sourcePath": "src/components/ManagerHeader/index.vue",
+      "category": "component",
+      "sourceCommit": "08de2a10c3f1a9bb1622229a37117cabe977e8ef",
+      "sourceCommitDate": "2026-01-21",
+      "sha256": "ae2bda77eff9a7bea19dc64a52650d9562d9a59552c34a0f4f6ac06b09070c8a"
+    },
+    {
+      "path": "src/components/ProviderIcon.vue",
+      "sourcePath": "src/components/ProviderIcon.vue",
+      "category": "component",
+      "sourceCommit": "08de2a10c3f1a9bb1622229a37117cabe977e8ef",
+      "sourceCommitDate": "2026-01-21",
+      "sha256": "917fe425d496eacd08e02028733551eac1317f657d94ac9396a4b1a71b818646"
+    },
+    {
+      "path": "src/test-utils/stub-location.ts",
+      "sourcePath": "src/test-utils/stub-location.ts",
+      "category": "util",
+      "sourceCommit": "644517da55a4038507098007a0f88d95efd4b36e",
+      "sourceCommitDate": "2026-09-30",
+      "sha256": "1391ffb20bab0e4a8e84e03387f9aa230f7f93ca0c99e43d8f241d1b2b84f263"
+    },
+    {
+      "path": "src/utils/constants.ts",
+      "sourcePath": "src/utils/constants.ts",
+      "category": "util",
+      "sourceCommit": "b800f4d95662186ff067f6570616d55de1da34c3",
+      "sourceCommitDate": "2026-09-07",
+      "sha256": "8105c470953e5f8c523dd347777d639eafb0fba82bf07abdde861883593a4c22"
+    },
+    {
+      "path": "src/utils/cookie.ts",
+      "sourcePath": "src/utils/cookie.ts",
+      "category": "util",
+      "sourceCommit": "fa0e3f8a32e37644f051e05d3f388e4509cd33fa",
+      "sourceCommitDate": "2026-03-28",
+      "sha256": "357d859cb2d34884c744cab81f9e22fc99edc91cefd8cd8606171c853e489878"
+    },
+    {
+      "path": "src/utils/error-handler.ts",
+      "sourcePath": "src/utils/error-handler.ts",
+      "category": "util",
+      "sourceCommit": "08de2a10c3f1a9bb1622229a37117cabe977e8ef",
+      "sourceCommitDate": "2026-01-21",
+      "sha256": "0157cb7c5771d53811d551698fe3beb8e089bc29c1b77f03019b38191acc8e83"
+    },
+    {
+      "path": "src/utils/exportAll.ts",
+      "sourcePath": "src/utils/exportAll.ts",
+      "category": "util",
+      "sourceCommit": "f87bbd9a23c2eed24091b13b07ae842274b84524",
+      "sourceCommitDate": "2026-09-08",
+      "sha256": "2b66d381a244a781d74567ec9aa3d1e784edbeab4497d24825d08608ab499d12"
+    },
+    {
+      "path": "src/utils/fieldLabels.ts",
+      "sourcePath": "src/utils/fieldLabels.ts",
+      "category": "util",
+      "sourceCommit": "5739d7e0d12c0b9985cb672d302ec408de5b7b61",
+      "sourceCommitDate": "2026-10-10",
+      "sha256": "2d8dd7183204bb88ac106bcad210bb19514f69aa30fdf584449cd849967f58ff"
+    },
+    {
+      "path": "src/utils/format.ts",
+      "sourcePath": "src/utils/format.ts",
+      "category": "util",
+      "sourceCommit": "08de2a10c3f1a9bb1622229a37117cabe977e8ef",
+      "sourceCommitDate": "2026-01-21",
+      "sha256": "5d7587f9dcab5934827d0b8543e66ef19e86e71b5786c0eb69af0dced33b9a2f"
+    },
+    {
+      "path": "src/utils/icon-mapping.ts",
+      "sourcePath": "src/utils/icon-mapping.ts",
+      "category": "util",
+      "sourceCommit": "5739d7e0d12c0b9985cb672d302ec408de5b7b61",
+      "sourceCommitDate": "2026-10-10",
+      "sha256": "7bf19dfb8f975ab9799866074098a6ff63be02411ce0dc02174c1a746367bcb2"
+    }
+  ]
+}

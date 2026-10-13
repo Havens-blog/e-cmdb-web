@@ -1,0 +1,41 @@
+name: Drift Check (e-cam-web sha256)
+
+# 拷贝面漂移防线（与 haven-console/.github/workflows/ci.yml 的 drift-compare job 同口径）。
+# 本仓由 e-cam-web 拆分而来，28 个文件与其逐字节相同（主题令牌/请求层/通用组件/utils）。
+# 本 job 从 e-cam-web 重算这些源文件的 sha256 与 shared-hashes.json 登记值比对：
+# 源文件一变即红，强制「人工评估差异 → 同步拷贝或显式分叉 → 更新登记」三步走，
+# 把拆分后必然发生的静默漂移变成显式决策。
+#
+# Hard Rule：漂移对比只能以 e-cam-web 对应源文件为准。
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  drift-compare:
+    name: Drift Compare (e-cam-web sha256)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout e-cmdb-web
+        uses: actions/checkout@v4
+
+      - name: Checkout e-cam-web（漂移比对源仓）
+        uses: actions/checkout@v4
+        with:
+          repository: Havens-blog/e-cam-web
+          ref: main
+          path: e-cam-web
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 漂移比对（e-cam-web 源文件重算 sha256 vs shared-hashes.json）
+        env:
+          # drift-check.mjs 默认取 ../e-cam-web；CI 下把源仓 checkout 到 ./e-cam-web
+          E_CAM_WEB_ROOT: ${{ github.workspace }}/e-cam-web
+        run: node scripts/drift-check.mjs shared-hashes.json "$E_CAM_WEB_ROOT"
