@@ -1,17 +1,27 @@
 <script setup lang="ts">
 // AppShell：CMDB 配置数据平台统一导航壳。
 // 深色侧边栏（Linear 主题）+ 内容区 router-view，整合全部功能页。
-import { computed } from 'vue'
+// 导航项支持二级子菜单（如「服务树」→ 总览/环境管理/绑定规则），路由命中
+// 子项时自动展开；一级项可点击折叠/展开（参考 e-cam-web 侧边布局）。
+import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import {
-    Aim, Box, CircleCheck, Connection, Grid, Key, Odometer,
-    RefreshRight, Share, Timer
+    Aim, Box, CaretRight, CircleCheck, Connection, Grid, Key,
+    Odometer, RefreshRight, Share, Timer
 } from '@element-plus/icons-vue'
 
-interface NavItem {
+interface NavChild {
     path: string
     label: string
+}
+
+interface NavItem {
+    label: string
     icon: any
+    /** 无 children 时的链接路径 */
+    path?: string
+    /** 有 children = 可展开的一级菜单 */
+    children?: NavChild[]
 }
 
 interface NavGroup {
@@ -37,7 +47,15 @@ const navGroups: NavGroup[] = [
         items: [
             { path: '/topology', label: '资源拓扑', icon: Share },
             { path: '/model-topology', label: '拓扑视图', icon: Share },
-            { path: '/service-tree', label: '服务树', icon: Connection },
+            {
+                label: '服务树',
+                icon: Share,
+                children: [
+                    { path: '/service-tree', label: '服务树总览' },
+                    { path: '/service-tree/environments', label: '环境管理', },
+                    { path: '/service-tree/rules', label: '绑定规则' },
+                ],
+            },
             { path: '/impact', label: '影响分析', icon: Aim },
         ],
     },
@@ -55,8 +73,29 @@ const navGroups: NavGroup[] = [
     },
 ]
 
+// 二级菜单展开状态：路由命中子项自动展开，也可手动折叠/展开
+const expanded = ref<Record<string, boolean>>({})
+
+const findParentOf = (p: string) =>
+    navGroups.flatMap(g => g.items).find(i => i.children?.some(c => c.path === p))
+
 const route = useRoute()
 const activePath = computed(() => route.path)
+
+watch(
+    () => route.path,
+    p => {
+        const parent = findParentOf(p)
+        if (parent) expanded.value[parent.label] = true
+    },
+    { immediate: true },
+)
+
+const toggle = (item: NavItem) => {
+    expanded.value[item.label] = !expanded.value[item.label]
+}
+
+const isChildActive = (item: NavItem) => !!item.children?.some(c => c.path === route.path)
 </script>
 
 <template>
@@ -97,16 +136,44 @@ const activePath = computed(() => route.path)
       <nav class="nav">
         <div v-for="group in navGroups" :key="group.title" class="nav-group">
           <div class="nav-group-title">{{ group.title }}</div>
-          <router-link
-            v-for="item in group.items"
-            :key="item.path"
-            :to="item.path"
-            class="nav-item"
-            :class="{ active: activePath === item.path }"
-          >
-            <el-icon class="nav-icon"><component :is="item.icon" /></el-icon>
-            <span class="nav-label">{{ item.label }}</span>
-          </router-link>
+          <template v-for="item in group.items" :key="item.label">
+            <!-- 二级菜单：可展开的一级项 -->
+            <template v-if="item.children">
+              <button
+                class="nav-item nav-parent"
+                :class="{ active: isChildActive(item) }"
+                type="button"
+                @click="toggle(item)"
+              >
+                <el-icon class="nav-icon"><component :is="item.icon" /></el-icon>
+                <span class="nav-label">{{ item.label }}</span>
+                <el-icon class="nav-chevron" :class="{ expanded: expanded[item.label] }"><CaretRight /></el-icon>
+              </button>
+              <div v-show="expanded[item.label]" class="nav-children">
+                <router-link
+                  v-for="child in item.children"
+                  :key="child.path"
+                  :to="child.path"
+                  class="nav-child"
+                  :class="{ active: activePath === child.path }"
+                >
+                  <span class="child-dot" />
+                  <span class="nav-label">{{ child.label }}</span>
+                </router-link>
+              </div>
+            </template>
+
+            <!-- 普通一级菜单项 -->
+            <router-link
+              v-else
+              :to="item.path!"
+              class="nav-item"
+              :class="{ active: activePath === item.path }"
+            >
+              <el-icon class="nav-icon"><component :is="item.icon" /></el-icon>
+              <span class="nav-label">{{ item.label }}</span>
+            </router-link>
+          </template>
         </div>
       </nav>
 
@@ -217,6 +284,81 @@ const activePath = computed(() => route.path)
 
 .nav-label {
   line-height: 1;
+}
+
+// 带二级菜单的一级项：button 重置 + 右侧展开箭头
+.nav-parent {
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+
+  .nav-chevron {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--text-tertiary);
+    transition: transform 140ms ease;
+
+    &.expanded {
+      transform: rotate(90deg);
+    }
+  }
+}
+
+// 二级菜单容器：缩进 + 左侧引导线
+.nav-children {
+  margin: 2px 0 4px;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 6px;
+    bottom: 6px;
+    width: 1px;
+    background: var(--border-subtle);
+  }
+}
+
+.nav-child {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px 6px 12px;
+  border-radius: 6px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 13px;
+  transition: all 120ms ease;
+
+  &:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+  }
+
+  &.active {
+    background: rgba(113, 112, 255, 0.12);
+    color: var(--text-primary);
+
+    .child-dot {
+      background: var(--accent-blue);
+    }
+  }
+}
+
+.child-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--text-tertiary);
+  flex-shrink: 0;
 }
 
 .sidebar-footer {
