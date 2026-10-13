@@ -4,6 +4,24 @@
  * 覆盖条件校验前置（无完整条件不调 dry-run）、dry-run 请求体组装（conditions + node_id/env_id）、
  * 命中清单渲染（资产/云平台/地域/当前绑定状态）、0 命中显性警告、capped 截断提示。
  */
+
+// happy-dom 20.x 与 element-plus 2.11.x 兼容补丁：
+// ElTable 内部 key-render-helper 走 MutationObserver；
+// ElSelect / ElPopper 通过 @vueuse/core useResizeObserver 走 ResizeObserver。
+// happy-dom 的内置实现访问 #destroyed 私有字段时抛
+// "Cannot read private member #destroyed"，并污染 happy-dom 全局状态，
+// 让后续 mount 的 wrapper.vm 变 null、第二个 el-dialog 不渲染。
+// 用空操作 class 替身覆盖全局观察者（必须可 new 构造，vueuse / element-plus 都用 new 调用）。
+class StubObserver {
+    observe(): void {}
+    disconnect(): void {}
+    unobserve(): void {}
+    takeRecords(): unknown[] { return [] }
+}
+;(globalThis as any).MutationObserver = StubObserver
+;(globalThis as any).ResizeObserver = StubObserver
+;(globalThis as any).IntersectionObserver = StubObserver
+
 import { flushPromises, mount } from '@vue/test-utils'
 import {
     ElAlert,
@@ -37,13 +55,14 @@ vi.mock('@/api/service-tree', () => ({
     fieldValuesApi: vi.fn().mockResolvedValue({ data: [] })
 }))
 
-/** el-dialog 替身：modelValue 为真时渲染默认+footer 插槽，规避 overlay/teleport */
+/** el-dialog 替身：始终渲染 default+footer 槽（happy-dom 下 append-to-body
+ * 不生效；不依赖 props.modelValue，避免响应式 batch 下 second dialog 不出 DOM）。 */
 const ElDialogStub = defineComponent({
     name: 'ElDialog',
     props: { modelValue: { type: Boolean, default: false } },
-    setup(props, { slots }) {
+    setup(_, { slots }) {
         return () =>
-            props.modelValue ? h('div', { class: 'el-dialog-stub' }, [slots.default?.(), slots.footer?.()]) : null
+            h('div', { class: 'el-dialog-stub' }, [slots.default?.(), slots.footer?.()])
     }
 })
 
@@ -93,9 +112,9 @@ async function mountDialog(conditions: Array<{ field: string; operator: string; 
     const wrapper = mount(RuleFormDialog, {
         props: { visible: true, isEdit: false },
         global: {
+            // 真实组件通过 unplugin-vue-components 在 SFC 编译时已本地导入；
+            // 这里再注册一份作为兜底（SFC 若无 import 仍可解析）
             components: {
-                ElDialog: ElDialogStub,
-                ElTreeSelect: ElTreeSelectStub,
                 ElAlert,
                 ElButton,
                 ElCol,
@@ -110,9 +129,15 @@ async function mountDialog(conditions: Array<{ field: string; operator: string; 
                 ElRow,
                 ElSelect,
                 ElSwitch,
-                ElTable: ElTableStub,
-                ElTableColumn: ElTableColumnStub,
                 ElTag
+            },
+            // 关键：用 stubs 覆盖本地 import；components 优先级低于本地导入，
+            // ElDialog/ElTreeSelect/ElTable 在 SFC 中是本地 import，必须用 stubs 才能替换。
+            stubs: {
+                ElDialog: ElDialogStub,
+                ElTreeSelect: ElTreeSelectStub,
+                ElTable: ElTableStub,
+                ElTableColumn: ElTableColumnStub
             }
         }
     })

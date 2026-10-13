@@ -2,6 +2,9 @@
   "extends": "@vue/tsconfig/tsconfig.dom.json",
   "compilerOptions": {
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+    // 父 @vue/tsconfig/tsconfig.dom.json 默认 lib: ES2020，不含 ES2022.Array (.at)；
+    // 显式升 ES2022 以匹配 service-tree / topology 测试里的 .at() 用法。
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "types": ["vite/client", "node"],
     "baseUrl": ".",
     "paths": {

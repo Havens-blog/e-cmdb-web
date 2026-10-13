@@ -63,9 +63,35 @@ const activePath = computed(() => route.path)
   <div class="app-shell">
     <aside class="sidebar">
       <div class="sidebar-logo">
-        <span class="logo-mark">◆</span>
-        <span class="logo-text">CMDB</span>
-        <span class="logo-sub">配置数据平台</span>
+        <div class="logo-horizontal" role="img" aria-label="息壤 Xirang">
+          <svg viewBox="0 0 260 64" xmlns="http://www.w3.org/2000/svg">
+            <title>息壤 Xirang</title>
+            <defs>
+              <linearGradient id="xec-top" x1="8" y1="22" x2="56" y2="46" gradientUnits="userSpaceOnUse">
+                <stop offset="0" stop-color="#7170ff"/>
+                <stop offset="1" stop-color="#5e6ad2"/>
+              </linearGradient>
+              <linearGradient id="xec-sprout" x1="32" y1="34" x2="32" y2="6" gradientUnits="userSpaceOnUse">
+                <stop offset="0" stop-color="#7170ff"/>
+                <stop offset="1" stop-color="#a5b4fc"/>
+              </linearGradient>
+            </defs>
+            <path d="M8 46 L32 58 L56 46" fill="none" stroke="#5e6ad2" stroke-opacity="0.45" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M8 40 L32 52 L56 40" fill="none" stroke="#5e6ad2" stroke-opacity="0.75" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M32 22 L56 34 L32 46 L8 34 Z" fill="url(#xec-top)"/>
+            <g stroke="url(#xec-sprout)" stroke-width="3" stroke-linecap="round" fill="none">
+              <path d="M32 34 V14"/>
+              <path d="M32 24 L22 17"/>
+              <path d="M32 24 L42 17"/>
+            </g>
+            <circle cx="32" cy="34" r="3.2" fill="#ffffff"/>
+            <circle cx="32" cy="11" r="3.6" fill="#a5b4fc"/>
+            <circle cx="20" cy="15.5" r="3" fill="#8b93ff"/>
+            <circle cx="44" cy="15.5" r="3" fill="#8b93ff"/>
+            <text x="74" y="36" fill="currentColor" font-family="'PingFang SC','Microsoft YaHei','Noto Sans SC','Source Han Sans SC',sans-serif" font-size="28" font-weight="700" letter-spacing="4">息壤</text>
+            <text x="75" y="54" fill="#7170ff" font-family="'Inter Variable',Inter,'Segoe UI',Roboto,Arial,sans-serif" font-size="11.5" font-weight="600" letter-spacing="5.2">XIRANG CLOUD</text>
+          </svg>
+        </div>
       </div>
 
       <nav class="nav">
@@ -118,28 +144,25 @@ const activePath = computed(() => route.path)
 
 .sidebar-logo {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 8px;
-  padding: 0 8px 20px;
+  padding: 0 4px 20px;
   border-bottom: 1px solid var(--border-subtle);
   margin-bottom: 16px;
 }
 
-.logo-mark {
-  color: var(--accent-blue);
-  font-size: 14px;
-}
+// 息壤 Xirang 横版 wordmark；sidebar 232px - 24px padding = 208px 内容宽，logo 限 180px
+.logo-horizontal {
+  max-width: 180px;
+  height: auto;
+  flex-shrink: 0;
+  color: var(--text-primary);
 
-.logo-text {
-  font-size: 16px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-}
-
-.logo-sub {
-  font-size: 11px;
-  color: var(--text-tertiary);
-  margin-left: auto;
+  svg {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
 }
 
 .nav {
