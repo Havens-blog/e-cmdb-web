@@ -223,7 +223,7 @@
 </template>
 
 <script setup lang="ts">
-import ProviderIcon from '@/components/ProviderIcon.vue'
+import { ProviderIcon } from '@haven/ui/ProviderIcon'
 import { Close, Monitor } from '@element-plus/icons-vue'
 import { getProviderLabel } from '@/utils/constants'
 import { computed, ref } from 'vue'
