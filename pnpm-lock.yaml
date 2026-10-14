@@ -11,6 +11,9 @@ importers:
       '@element-plus/icons-vue':
         specifier: ^2.3.2
         version: 2.3.2(vue@3.5.22(typescript@5.9.3))
+      '@haven/ui':
+        specifier: link:../haven-ui
+        version: link:../haven-ui
       axios:
         specifier: ^1.6.8
         version: 1.20.0

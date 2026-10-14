@@ -81,7 +81,7 @@
 <script setup lang="ts">
 import { createCmdbModelApi, updateCmdbModelApi } from '@/api';
 import type { ModelCategory, ModelProvider, ModelVO } from '@/api/types/cmdb';
-import CustomIconSelect from '@/components/CustomIconSelect/index.vue';
+import { CustomIconSelect } from '@haven/ui/CustomIconSelect';
 import type { FormInstance, FormRules } from 'element-plus';
 import { reactive, ref, watch } from 'vue';
 

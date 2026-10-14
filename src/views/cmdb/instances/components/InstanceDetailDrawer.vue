@@ -251,7 +251,7 @@
 
 <script setup lang="ts">
 import type { InstanceVO } from '@/api/types/cmdb';
-import IconFont from '@/components/IconFont/index.vue';
+import { IconFont } from '@haven/ui/IconFont';
 import { getProviderLabel } from '@/utils/constants';
 import { CHARGE_TYPE_LABELS, ECS_STATUS_LABELS, labelOfLenient } from '@/utils/fieldLabels';
 import { ArrowDown, Close, Document, Refresh } from '@element-plus/icons-vue';
