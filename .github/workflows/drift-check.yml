@@ -1,12 +1,13 @@
 name: Drift Check (e-cam-web sha256)
 
-# 拷贝面漂移防线（与 haven-console/.github/workflows/ci.yml 的 drift-compare job 同口径）。
+# 拷贝面漂移防线（与 haven-console/.github/workflows/ci.yml 的 drift-compare job 同口径，
+# 本仓版本在此基础上多「本仓漂移」方向，见 scripts/drift-check.mjs 头部说明）。
 # 本仓由 e-cam-web 拆分而来，28 个文件与其逐字节相同（主题令牌/请求层/通用组件/utils）。
-# 本 job 从 e-cam-web 重算这些源文件的 sha256 与 shared-hashes.json 登记值比对：
-# 源文件一变即红，强制「人工评估差异 → 同步拷贝或显式分叉 → 更新登记」三步走，
-# 把拆分后必然发生的静默漂移变成显式决策。
+# 本 job 做双向比对：① 从 e-cam-web 重算源文件 sha256 vs 登记值（源漂移）；② 从本仓重算
+# 拷贝 sha256 vs 登记值（本仓漂移）。任一侧一变即红，强制
+# 「人工评估差异 → 同步拷贝或显式分叉 → 更新登记」三步走，把拆分后必然发生的静默漂移变成显式决策。
 #
-# Hard Rule：漂移对比只能以 e-cam-web 对应源文件为准。
+# Hard Rule：源漂移只能以 e-cam-web 对应源文件为准（方向 ② 的本仓漂移以本仓拷贝为准）。
 
 on:
   push:
