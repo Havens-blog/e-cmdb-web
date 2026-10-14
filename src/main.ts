@@ -11,7 +11,7 @@ import '../public/iconfont/iconfont.css'
 import '../public/iconfont/iconfont.js'
 
 // 全局组件
-import IconFont from './components/IconFont/index.vue'
+import { IconFont } from '@haven/ui/IconFont'
 
 const app = createApp(App)
 

@@ -122,52 +122,12 @@
       "sha256": "81b07fc90ea6fd330c8bdf8851b4edbe32c87d95f3afb057c23cae5aa8613234"
     },
     {
-      "path": "src/components/AssetExportDialog.vue",
-      "sourcePath": "src/components/AssetExportDialog.vue",
-      "category": "component",
-      "sourceCommit": "fc0b2e45757aa6d0a16516d8127aec94d26a486f",
-      "sourceCommitDate": "2026-09-21",
-      "sha256": "73d55b22383f2692fea04d231a81c3239475c51aa3d71dfaac2aca9b79a1f2a2"
-    },
-    {
-      "path": "src/components/CustomIconSelect/constants.ts",
-      "sourcePath": "src/components/CustomIconSelect/constants.ts",
-      "category": "component",
-      "sourceCommit": "cd1b3f777b444a45c3c0bab322c76c1d89fce97e",
-      "sourceCommitDate": "2026-03-05",
-      "sha256": "780efce25372d9d6a3dcf9527d61a4d744d5c7466f38c1e3f007c4ed1aaec4b5"
-    },
-    {
-      "path": "src/components/CustomIconSelect/index.vue",
-      "sourcePath": "src/components/CustomIconSelect/index.vue",
-      "category": "component",
-      "sourceCommit": "282cefdddc512b1a8309e25028b48dad9580e3da",
-      "sourceCommitDate": "2026-09-07",
-      "sha256": "14e77408cf62710270f0fa78d393756a7625c9aec0219f866b63ecc337aeff03"
-    },
-    {
-      "path": "src/components/IconFont/index.vue",
-      "sourcePath": "src/components/IconFont/index.vue",
-      "category": "component",
-      "sourceCommit": "cd1b3f777b444a45c3c0bab322c76c1d89fce97e",
-      "sourceCommitDate": "2026-03-05",
-      "sha256": "1a4357c3b4d10e260b19f7ff18ec22803c2d31edda6aeff111b9c898743023f8"
-    },
-    {
-      "path": "src/components/ManagerHeader/index.vue",
-      "sourcePath": "src/components/ManagerHeader/index.vue",
-      "category": "component",
-      "sourceCommit": "08de2a10c3f1a9bb1622229a37117cabe977e8ef",
-      "sourceCommitDate": "2026-01-21",
-      "sha256": "ae2bda77eff9a7bea19dc64a52650d9562d9a59552c34a0f4f6ac06b09070c8a"
-    },
-    {
       "path": "src/components/ProviderIcon.vue",
       "sourcePath": "src/components/ProviderIcon.vue",
       "category": "component",
-      "sourceCommit": "08de2a10c3f1a9bb1622229a37117cabe977e8ef",
-      "sourceCommitDate": "2026-01-21",
-      "sha256": "917fe425d496eacd08e02028733551eac1317f657d94ac9396a4b1a71b818646"
+      "sourceCommit": "2cf91282ceb25742a56dcd7834a31a8b53c38393",
+      "sourceCommitDate": "2026-10-14",
+      "sha256": "c2497eb174cf5a92ffe34e607c8aa23211f39130f44d42cac58c91cc865b0776"
     },
     {
       "path": "src/test-utils/stub-location.ts",

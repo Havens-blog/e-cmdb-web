@@ -235,9 +235,9 @@
 <script setup lang="ts">
 import { deleteCmdbInstanceApi, listCmdbInstancesApi, listCmdbModelsApi } from '@/api'
 import type { InstanceVO, ModelVO } from '@/api/types/cmdb'
-import AssetExportDialog, { type ExportFieldConfig } from '@/components/AssetExportDialog.vue'
-import IconFont from '@/components/IconFont/index.vue'
-import ManagerHeader from '@/components/ManagerHeader/index.vue'
+import { AssetExportDialog, type ExportFieldConfig } from '@haven/ui/AssetExportDialog'
+import { IconFont } from '@haven/ui/IconFont'
+import { ManagerHeader } from '@haven/ui/ManagerHeader'
 import { safeTagType, getProviderLabel as getProviderLabelRaw, getProviderLabel as getProviderLabelShared } from '@/utils/constants'
 import { fetchAllRows } from '@/utils/exportAll'
 import { Download, Plus, Refresh, Search, Setting } from '@element-plus/icons-vue'
