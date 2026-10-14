@@ -133,9 +133,9 @@
       "path": "src/utils/constants.ts",
       "sourcePath": "src/utils/constants.ts",
       "category": "util",
-      "sourceCommit": "b800f4d95662186ff067f6570616d55de1da34c3",
-      "sourceCommitDate": "2026-09-07",
-      "sha256": "8105c470953e5f8c523dd347777d639eafb0fba82bf07abdde861883593a4c22"
+      "sourceCommit": "b6da5855afce8228b84c27da1e6a3c1d0af0f403",
+      "sourceCommitDate": "2026-10-14",
+      "sha256": "c82ef81d82431bfee8509f92427d547039d4cb51a8aaed6dfd576f75f0d9f154"
     },
     {
       "path": "src/utils/cookie.ts",
