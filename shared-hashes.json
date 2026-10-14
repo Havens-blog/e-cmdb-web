@@ -122,14 +122,6 @@
       "sha256": "81b07fc90ea6fd330c8bdf8851b4edbe32c87d95f3afb057c23cae5aa8613234"
     },
     {
-      "path": "src/components/ProviderIcon.vue",
-      "sourcePath": "src/components/ProviderIcon.vue",
-      "category": "component",
-      "sourceCommit": "2cf91282ceb25742a56dcd7834a31a8b53c38393",
-      "sourceCommitDate": "2026-10-14",
-      "sha256": "c2497eb174cf5a92ffe34e607c8aa23211f39130f44d42cac58c91cc865b0776"
-    },
-    {
       "path": "src/test-utils/stub-location.ts",
       "sourcePath": "src/test-utils/stub-location.ts",
       "category": "util",
@@ -189,9 +181,9 @@
       "path": "src/utils/icon-mapping.ts",
       "sourcePath": "src/utils/icon-mapping.ts",
       "category": "util",
-      "sourceCommit": "5739d7e0d12c0b9985cb672d302ec408de5b7b61",
-      "sourceCommitDate": "2026-10-10",
-      "sha256": "7bf19dfb8f975ab9799866074098a6ff63be02411ce0dc02174c1a746367bcb2"
+      "sourceCommit": "ec8d86c49c574b610cc597b9cabd327015fb4e9a",
+      "sourceCommitDate": "2026-10-14",
+      "sha256": "a36bcb24ba759911c466e08d511d501e455cfc3a38f5b79307e1f91a0b0c49d4"
     }
   ]
 }
