@@ -133,14 +133,103 @@ describe('变量拆分契约（Hard Rule：机制 = build 期 env 注入，不�
         expect(offenders, `散落的 /login 硬编码: ${offenders.join(', ')}`).toEqual([])
     })
 
-    it('三处改读点各自引用拆分后的变量/取值函数', () => {
+    it('index.ts 单一改读点：env 注入而非散落硬编码（user store / MainLayout 拆分后已不适用）', () => {
         const read = (p: string) => readFileSync(join(repoRoot, p), 'utf-8')
-        // 登录目标：index.ts 与 user.ts 改读 VITE_LOGIN_TARGET（经 resolveLoginTarget）
+        // 登录目标：index.ts 改读 VITE_LOGIN_TARGET（经 resolveLoginTarget）。
+        // 注：e-cmdb-web 拆为独立仓后 stores/user（CAM 特有 store）和 layouts/MainLayout
+        // 均已不在仓内, VITE_ECMDB_WEB_BASE 也未在任何源码被引用——原"三处改读点"契约
+        // 不再适用, 本条只锁 index.ts 这一个事实。
         expect(read('src/api/request/index.ts')).toContain('VITE_LOGIN_TARGET')
-        expect(read('src/stores/user.ts')).toContain('resolveLoginTarget')
-        // 个人设置基址：MainLayout 改读 VITE_ECMDB_WEB_BASE（语义正名、值不变），
-        // 且绝不经 import.meta.env 读登录目标（防 /console/login/profile/index 死链）
-        expect(read('src/layouts/MainLayout.vue')).toContain('VITE_ECMDB_WEB_BASE')
-        expect(read('src/layouts/MainLayout.vue')).not.toContain('import.meta.env.VITE_LOGIN_TARGET')
+    })
+})
+
+/**
+ * X-Tenant-Id 拦截器（feat/cmdb-tenant-context）:
+ *   后端 RequireTenant 强约束: 每个业务请求都必须带 X-Tenant-Id 头, 缺则 403。
+ *   平台跳转 URL ?tenant_id= 在路由守卫处被解析 + 写入 tenantContext, 拦截器从
+ *   tenantContext 读后注入。
+ *   - tenantId > 0  -> 下发 X-Tenant-Id: <id>
+ *   - tenantId === 0  -> 不发头 (让后端 RequireTenant 自然 403, 避免给后端
+ *     "看似有租户但实际是默认 0" 的误导头)
+ *
+ * 测试策略: 不启 axios 真请求 (happy-dom 环境, 也无 network), 用 mock adapter
+ * 抓拦截器返回的 config, 断言 X-Tenant-Id 头值。
+ */
+describe('HttpRequest X-Tenant-Id 拦截器', () => {
+    /**
+     * 动态 import HttpRequest, 用 fresh module 隔离 tenantContext 模块状态
+     * (tenantContext 模块级 ref, 各用例需独立)
+     */
+    async function fresh() {
+        vi.resetModules()
+        // mock axios: create 返回带 interceptors.request.use 的假实例,
+        // 调用 request 走 mock adapter 让请求拦截器跑一遍
+        const fakeInstance = {
+            interceptors: {
+                request: { use: vi.fn() },
+                response: { use: vi.fn() },
+            },
+            request: vi.fn(),
+        }
+        const axiosMock = {
+            create: vi.fn(() => fakeInstance),
+            __mock: true,
+        }
+        vi.doMock('axios', () => ({
+            default: axiosMock,
+        }))
+
+        const ctx = await import('@/api/tenantContext')
+        const mod = await import('./index')
+        return { HttpRequest: mod.default, fakeInstance, ctx, axiosMock }
+    }
+
+    /**
+     * 从 fakeInstance.interceptors.request.use 的第二个回调里取出"全局请求拦截器",
+     * 模拟一次 config 跑过拦截器, 返回最终的 config。
+     */
+    async function runRequestInterceptor(
+        fakeInstance: { interceptors: { request: { use: ReturnType<typeof vi.fn> } } },
+        initialConfig: Record<string, unknown>
+    ): Promise<Record<string, unknown>> {
+        const calls = fakeInstance.interceptors.request.use.mock.calls
+        expect(calls.length).toBeGreaterThanOrEqual(2)
+        const globalInterceptor = calls[1]![0] as (config: unknown) => unknown
+        return globalInterceptor(initialConfig) as Record<string, unknown>
+    }
+
+    it('tenantId > 0 -> 拦截器给 config.headers 注入 X-Tenant-Id 字符串', async () => {
+        const { HttpRequest, fakeInstance, ctx } = await fresh()
+        ctx.setTenantId(5)
+        new HttpRequest({ url: '/api/v1/cmdb/instances' } as never)
+        const out = await runRequestInterceptor(fakeInstance, { headers: {} as Record<string, string> })
+        expect((out.headers as Record<string, string>)['X-Tenant-Id']).toBe('5')
+    })
+
+    it('tenantId = 0 -> 不发 X-Tenant-Id 头 (避免给后端误导)', async () => {
+        const { HttpRequest, fakeInstance, ctx } = await fresh()
+        ctx.setTenantId(0)
+        new HttpRequest({ url: '/api/v1/cmdb/instances' } as never)
+        const out = await runRequestInterceptor(fakeInstance, { headers: {} as Record<string, string> })
+        expect((out.headers as Record<string, string>)['X-Tenant-Id']).toBeUndefined()
+    })
+
+    it('tenantId 由 7 改 9 后 -> 拦截器动态读到最新值 (不缓存)', async () => {
+        const { HttpRequest, fakeInstance, ctx } = await fresh()
+        new HttpRequest({ url: '/api/v1/cmdb/instances' } as never)
+        ctx.setTenantId(7)
+        const out1 = await runRequestInterceptor(fakeInstance, { headers: {} as Record<string, string> })
+        expect((out1.headers as Record<string, string>)['X-Tenant-Id']).toBe('7')
+        ctx.setTenantId(9)
+        const out2 = await runRequestInterceptor(fakeInstance, { headers: {} as Record<string, string> })
+        expect((out2.headers as Record<string, string>)['X-Tenant-Id']).toBe('9')
+    })
+
+    it('tenantId 为负数 -> 不发头 (parseTenantIdFromSearch 已挡, 防御性兜底)', async () => {
+        const { HttpRequest, fakeInstance, ctx } = await fresh()
+        ctx.setTenantId(-3)
+        new HttpRequest({ url: '/api/v1/cmdb/instances' } as never)
+        const out = await runRequestInterceptor(fakeInstance, { headers: {} as Record<string, string> })
+        expect((out.headers as Record<string, string>)['X-Tenant-Id']).toBeUndefined()
     })
 })

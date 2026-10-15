@@ -5,6 +5,7 @@ import type { AxiosInstance } from 'axios'
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
 import type { RequestConfig, RequestInterceptors, ResponseData } from './types'
+import { getTenantId } from '@/api/tenantContext'
 
 // 防止多个并发 401 请求重复跳转登录页
 let isRedirectingToLogin = false
@@ -63,6 +64,15 @@ class HttpRequest {
                 const token = getEcmdbToken()
                 if (token && config.headers) {
                     config.headers.Authorization = `Bearer ${token}`
+                }
+
+                // 租户上下文: 平台跳转 URL ?tenant_id= 已在 main.ts/路由守卫处解析写入;
+                // 此处每次请求动态读取, 保证 SPA 内 push 路由后租户头也跟着变。
+                // tenant_id=0 (未带/未选) 时不发头, 让后端 RequireTenant 自然 403,
+                // 避免给后端一个 "看似有租户但实际是默认 0" 的误导头。
+                const tid = getTenantId()
+                if (tid > 0 && config.headers) {
+                    config.headers['X-Tenant-Id'] = String(tid)
                 }
 
                 // 添加请求 ID 用于追踪
