@@ -31,6 +31,12 @@ export interface MenuGroup {
 
 export const menuGroups: MenuGroup[] = [
     {
+        title: '概览',
+        items: [
+            { key: 'dashboard', path: '/dashboard', title: '仪表盘', icon: 'ops-cmdb-dashboard' },
+        ],
+    },
+    {
         title: 'CMDB',
         items: [
             { key: 'cmdb-models', path: '/cmdb/models', title: '资源模型', icon: 'icon-xianxing-wuliji' },
@@ -51,6 +57,16 @@ export const menuGroups: MenuGroup[] = [
         title: '洞察',
         items: [
             { key: 'topology', path: '/topology', title: '资源拓扑', icon: 'caise-computer' },
+            { key: 'impact', path: '/impact', title: '影响分析', icon: 'monitor-analysis' },
+            { key: 'quality', path: '/quality', title: '数据质量', icon: 'monitor-zongfenhegexiangpingfen' },
+            { key: 'audit', path: '/audit', title: '变更审计', icon: 'icon-xianxing-shenji' },
+        ],
+    },
+    {
+        title: '集成',
+        items: [
+            { key: 'discovery', path: '/discovery', title: '发现同步', icon: 'cmdb-discovery_resources' },
+            { key: 'open-api', path: '/open-api', title: '开放 API', icon: 'oneterm-secret_key' },
         ],
     },
 ]
