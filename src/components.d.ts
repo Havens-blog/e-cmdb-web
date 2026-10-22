@@ -48,6 +48,7 @@ declare module 'vue' {
     ElTreeSelect: typeof import('element-plus/es')['ElTreeSelect']
     IconFont: typeof import('./components/IconFont/index.vue')['default']
     ManagerHeader: typeof import('./components/ManagerHeader/index.vue')['default']
+    PageContainer: typeof import('./components/PageContainer.vue')['default']
     ProviderIcon: typeof import('./components/ProviderIcon.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
