@@ -23,7 +23,7 @@ import {
     ElTag
 } from 'element-plus'
 import { defineComponent, h, inject, provide } from 'vue'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { dryRunRulesApi } from '@/api/service-tree'
 import type { DryRunResult } from '@/api/types/service-tree'
 import RuleFormDialog from '../RuleFormDialog.vue'
@@ -89,6 +89,8 @@ const ElTableColumnStub = defineComponent({
 })
 
 /** 挂载组件并通过 setupState 预填表单（name/node/env 走必填校验，conditions 传参） */
+const wrappers: any[] = []
+
 async function mountDialog(conditions: Array<{ field: string; operator: string; value: string }>) {
     const wrapper = mount(RuleFormDialog, {
         props: { visible: true, isEdit: false },
@@ -122,6 +124,7 @@ async function mountDialog(conditions: Array<{ field: string; operator: string; 
     form.nodeId = 3
     form.envId = 2
     form.conditions = conditions as any
+    wrappers.push(wrapper)
     return wrapper
 }
 
@@ -130,6 +133,33 @@ const makeResult = (over: Partial<DryRunResult>): DryRunResult => ({
     total: 0,
     capped: false,
     ...over
+})
+
+// ==================== happy-dom 环境桩 ====================
+/** el-table 的 key-render-helper 依赖 MutationObserver（happy-dom 跨 realm 崩溃） */
+class NoopMutationObserver {
+    observe(): void {}
+    unobserve(): void {}
+    disconnect(): void {}
+    takeRecords(): MutationRecord[] {
+        return []
+    }
+}
+
+class NoopResizeObserver {
+    observe(): void {}
+    unobserve(): void {}
+    disconnect(): void {}
+}
+
+beforeEach(() => {
+    vi.stubGlobal('MutationObserver', NoopMutationObserver)
+    vi.stubGlobal('ResizeObserver', NoopResizeObserver)
+})
+
+afterEach(() => {
+    wrappers.splice(0).forEach((wrapper) => wrapper.unmount())
+    vi.unstubAllGlobals()
 })
 
 describe('RuleFormDialog dry-run 试运行', () => {
@@ -196,7 +226,7 @@ describe('RuleFormDialog dry-run 试运行', () => {
         expect(vm.dryRunVisible).toBe(true)
         expect(vm.dryRunResult.items).toHaveLength(2)
         expect(vm.dryRunResult.total).toBe(2)
-        const text = wrapper.text()
+        const text = document.body.textContent || ''
         expect(text).toContain('共命中')
         expect(text).toContain('订单服务-01')
         expect(text).toContain('i-bp1')
@@ -204,7 +234,7 @@ describe('RuleFormDialog dry-run 试运行', () => {
         expect(text).toContain('手动绑定')
         expect(text).toContain('SMT订单节点')
         // 0 命中警告不应出现
-        expect(wrapper.find('.el-alert--warning').exists()).toBe(false)
+        expect(document.body.querySelector('.el-alert--warning')).toBe(null)
         warnSpy.mockRestore()
     })
 
@@ -214,9 +244,9 @@ describe('RuleFormDialog dry-run 试运行', () => {
         await (wrapper.vm as any).handleDryRun()
         await flushPromises()
 
-        const alert = wrapper.find('.el-alert--warning')
-        expect(alert.exists()).toBe(true)
-        expect(alert.text()).toContain('未命中任何资产')
+        const alert = document.body.querySelector('.el-alert--warning')
+        expect(alert).not.toBe(null)
+        expect(alert!.textContent || '').toContain('未命中任何资产')
     })
 
     it('capped 截断时提示仅展示部分命中', async () => {
@@ -240,8 +270,9 @@ describe('RuleFormDialog dry-run 试运行', () => {
         await (wrapper.vm as any).handleDryRun()
         await flushPromises()
 
-        expect(wrapper.text()).toContain('800')
-        expect(wrapper.text()).toContain('仅展示前')
+        const bodyText = document.body.textContent || ''
+        expect(bodyText).toContain('800')
+        expect(bodyText).toContain('仅展示前')
     })
 })
 
