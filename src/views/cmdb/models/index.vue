@@ -8,6 +8,10 @@
           <p class="page-subtitle">管理 CMDB 资源模型定义</p>
         </div>
         <div class="header-actions">
+          <el-button class="action-btn" @click="aliasDrawerVisible = true">
+            <el-icon><Connection /></el-icon>
+            模型别名
+          </el-button>
           <el-button class="action-btn" @click="handleInitGroups">
             <el-icon><FolderAdd /></el-icon>
             初始化分组
@@ -182,6 +186,9 @@
 
     <!-- 模型详情抽屉 -->
     <ModelDetailDrawer v-model:visible="detailDrawerVisible" :model="detailModel" @edit="handleEditModel" @delete="handleDeleteModel" />
+
+    <!-- 模型别名映射抽屉 -->
+    <ModelAliasDrawer v-model:visible="aliasDrawerVisible" />
   </div>
 </template>
 
@@ -200,6 +207,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import ModelDetailDrawer from './components/ModelDetailDrawer.vue'
 import ModelForm from './components/ModelForm.vue'
+import ModelAliasDrawer from './components/ModelAliasDrawer.vue'
 
 const router = useRouter()
 
@@ -236,6 +244,7 @@ const groupRules: FormRules = {
 
 // 详情抽屉
 const detailDrawerVisible = ref(false)
+const aliasDrawerVisible = ref(false)
 const detailModel = ref<ModelVO | null>(null)
 
 // 计算属性
