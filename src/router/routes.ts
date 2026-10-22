@@ -11,7 +11,17 @@ import type { RouteRecordRaw } from 'vue-router'
 const routes: RouteRecordRaw[] = [
     {
         path: '/',
-        redirect: '/cmdb',
+        redirect: '/dashboard',
+    },
+    // ==================== 概览 ====================
+    {
+        path: '/dashboard',
+        name: 'Dashboard',
+        component: () => import('@/views/dashboard/index.vue'),
+        meta: {
+            title: '仪表盘',
+            icon: 'Odometer',
+        },
     },
     // ==================== CMDB 管理路由 ====================
     {
@@ -90,6 +100,56 @@ const routes: RouteRecordRaw[] = [
         meta: {
             title: '资源拓扑',
             icon: 'Share',
+        },
+    },
+    // ==================== 影响分析 ====================
+    {
+        path: '/impact',
+        name: 'Impact',
+        component: () => import('@/views/impact/index.vue'),
+        meta: {
+            title: '影响分析',
+            icon: 'Aim',
+        },
+    },
+    // ==================== 变更审计 ====================
+    {
+        path: '/audit',
+        name: 'Audit',
+        component: () => import('@/views/audit/index.vue'),
+        meta: {
+            title: '变更审计',
+            icon: 'Timer',
+        },
+    },
+    // ==================== 数据质量 ====================
+    {
+        path: '/quality',
+        name: 'Quality',
+        component: () => import('@/views/quality/index.vue'),
+        meta: {
+            title: '数据质量',
+            icon: 'CircleCheck',
+        },
+    },
+    // ==================== 发现同步 ====================
+    {
+        path: '/discovery',
+        name: 'Discovery',
+        component: () => import('@/views/discovery/index.vue'),
+        meta: {
+            title: '发现同步',
+            icon: 'RefreshRight',
+        },
+    },
+    // ==================== 开放 API ====================
+    {
+        path: '/open-api',
+        name: 'OpenApi',
+        component: () => import('@/views/open-api/index.vue'),
+        meta: {
+            title: '开放 API',
+            icon: 'Key',
         },
     },
     // ==================== 资产实例（按模型 uid） ====================

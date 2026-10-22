@@ -53,10 +53,11 @@ beforeEach(async () => {
 })
 
 describe('AppShell 菜单渲染', () => {
-    it('渲染全部分组标题与 8 个菜单项', () => {
+    it('渲染全部分组标题与菜单项（含六页：仪表盘/影响分析/数据质量/变更审计/发现同步/开放 API）', () => {
         const wrapper = mountShell()
         const titles = wrapper.findAll('.menu-item').map((w) => w.text())
         expect(titles).toHaveLength(allItems.length)
+        // 原有页面
         expect(titles).toContain('资源模型')
         expect(titles).toContain('资源实例')
         expect(titles).toContain('模型关系')
@@ -65,8 +66,15 @@ describe('AppShell 菜单渲染', () => {
         expect(titles).toContain('环境管理')
         expect(titles).toContain('绑定规则')
         expect(titles).toContain('资源拓扑')
+        // 新接入的六页
+        expect(titles).toContain('仪表盘')
+        expect(titles).toContain('影响分析')
+        expect(titles).toContain('数据质量')
+        expect(titles).toContain('变更审计')
+        expect(titles).toContain('发现同步')
+        expect(titles).toContain('开放 API')
         const groupTitles = wrapper.findAll('.menu-group-title').map((w) => w.text())
-        expect(groupTitles).toEqual(['CMDB', '服务树', '洞察'])
+        expect(groupTitles).toEqual(['概览', 'CMDB', '服务树', '洞察', '集成'])
     })
 })
 
