@@ -135,3 +135,32 @@ describe('AppShell 侧栏状态', () => {
         expect(wrapper.find('.menu-title').exists()).toBe(true)
     })
 })
+
+describe('AppShell WatchAlert 布局（黑底悬浮壳）', () => {
+    it('无独立顶栏：header 职能（logo/租户/用户）全在侧边栏，结构齐全', () => {
+        const wrapper = mountShell()
+        // 侧边栏 header 区：居中 logo + 租户徽标 + 渐变分割线
+        expect(wrapper.find('.sidebar-logo').exists()).toBe(true)
+        expect(wrapper.find('.tenant-badge').exists()).toBe(true)
+        expect(wrapper.find('.shell-divider').exists()).toBe(true)
+        // 底部操作区：返回平台入口（WatchAlert 毛玻璃用户区同构）
+        expect(wrapper.find('.sidebar-user .user-entry').exists()).toBe(true)
+        // 内容列：悬浮圆角卡片 + 品牌 footer，无独立 header 元素
+        expect(wrapper.find('.content-card').exists()).toBe(true)
+        expect(wrapper.find('.app-main header').exists()).toBe(false)
+    })
+
+    it('返回平台入口指向运维平台首页（默认 /cam/，可用 VITE_PLATFORM_HOME 覆盖）', () => {
+        const wrapper = mountShell()
+        const entry = wrapper.find('.sidebar-user .user-entry')
+        expect(entry.attributes('href')).toBe('/cam/')
+        expect(entry.text()).toContain('返回平台')
+    })
+
+    it('footer 品牌文案与息壤 logo 存在（WatchAlert footer 同构）', () => {
+        const wrapper = mountShell()
+        expect(wrapper.find('.app-footer').text()).toContain('息壤 CMDB')
+        expect(wrapper.find('.app-footer').text()).toContain('提供轻量级一站式配置管理服务')
+        expect(wrapper.find('.sidebar-logo .logo-icon svg').exists()).toBe(true)
+    })
+})
