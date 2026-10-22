@@ -10,14 +10,6 @@
   ],
   "files": [
     {
-      "path": "public/xirang-mark.svg",
-      "sourcePath": "public/xirang-mark.svg",
-      "category": "asset",
-      "sourceCommit": "76b9faeaf0375ceff43bfe005f88bc873a9d03e5",
-      "sourceCommitDate": "2026-10-13",
-      "sha256": "fed0c130e78a975717b84a2f090cea22521372cf8a18538a7826d8493cef0bd3"
-    },
-    {
       "path": "src/api/dns.ts",
       "sourcePath": "src/api/dns.ts",
       "category": "request-layer",
@@ -47,7 +39,9 @@
       "category": "request-layer",
       "sourceCommit": "644517da55a4038507098007a0f88d95efd4b36e",
       "sourceCommitDate": "2026-09-30",
-      "sha256": "4f6560bf15250672fc3de239541b13e70b078c653e5ddb489b6ceee774be7364"
+      "sourceSha256": "4f6560bf15250672fc3de239541b13e70b078c653e5ddb489b6ceee774be7364",
+      "sha256": "b7496412389ea4c99c40a1ab6566ee31dec0b468a9e1f2c69380747b725fe772",
+      "note": "模式文件：PR #14（83a5eb0）在本仓全局请求拦截器注入 X-Tenant-Id（后端 RequireTenant 中间件强约束，缺则 403），e-cam-web 无租户上下文概念，属合理分叉。sourceSha256=e-cam-web 源形态（未变）；sha256=本仓含租户头注入形态。"
     },
     {
       "path": "src/api/request/types.ts",
