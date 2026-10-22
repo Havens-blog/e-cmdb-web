@@ -1,8 +1,11 @@
 <script setup lang="ts">
-// 应用壳：单一 AppShell 布局（自带深色导航头 + 内容 outlet），
-// 无公开路由——所有子路由均由 AppShell 承接。
+// 应用壳：AppShell 侧边栏布局（对齐运维平台 e-cam-web 设计，见 layouts/AppShell.vue），
+// 所有子路由由 AppShell 承接；菜单导航经 buildTenantUrl 透传当前租户。
+import AppShell from '@/layouts/AppShell.vue'
 </script>
 
 <template>
-  <router-view />
+  <AppShell>
+    <router-view />
+  </AppShell>
 </template>
