@@ -7,12 +7,9 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
-    AssetExportDialog: typeof import('./components/AssetExportDialog.vue')['default']
-    CustomIconSelect: typeof import('./components/CustomIconSelect/index.vue')['default']
     ElAlert: typeof import('element-plus/es')['ElAlert']
     ElButton: typeof import('element-plus/es')['ElButton']
     ElCheckbox: typeof import('element-plus/es')['ElCheckbox']
-    ElCheckboxGroup: typeof import('element-plus/es')['ElCheckboxGroup']
     ElCol: typeof import('element-plus/es')['ElCol']
     ElCollapse: typeof import('element-plus/es')['ElCollapse']
     ElCollapseItem: typeof import('element-plus/es')['ElCollapseItem']
@@ -46,10 +43,8 @@ declare module 'vue' {
     ElTooltip: typeof import('element-plus/es')['ElTooltip']
     ElTree: typeof import('element-plus/es')['ElTree']
     ElTreeSelect: typeof import('element-plus/es')['ElTreeSelect']
-    IconFont: typeof import('./components/IconFont/index.vue')['default']
-    ManagerHeader: typeof import('./components/ManagerHeader/index.vue')['default']
+    IconFont: typeof import('@haven/ui/IconFont')['IconFont']
     PageContainer: typeof import('./components/PageContainer.vue')['default']
-    ProviderIcon: typeof import('./components/ProviderIcon.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
   }

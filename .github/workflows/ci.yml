@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # ── typecheck（vue-tsc）+ build ────────────────────────────────────────
+  typecheck-build:
+    name: Typecheck & Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout e-cmdb-web
+        uses: actions/checkout@v4
+
+      - name: Checkout haven-ui（@haven/ui 为 link:../haven-ui，CI 需单独拉取源码）
+        run: git clone --depth 1 https://github.com/Havens-blog/haven-ui.git ../haven-ui
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.30.3
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Install haven-ui deps（link 依赖需自己的 node_modules 供 vue-tsc 解析）
+        run: cd ../haven-ui && pnpm install --frozen-lockfile
+
+      - name: Typecheck (vue-tsc)
+        run: pnpm typecheck
+
+      - name: Build
+        run: pnpm build
+
+  # ── vitest（test = vitest run）────────────────────────────────────────
+  vitest:
+    name: Vitest
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout e-cmdb-web
+        uses: actions/checkout@v4
+
+      - name: Checkout haven-ui（@haven/ui 为 link:../haven-ui，CI 需单独拉取源码）
+        run: git clone --depth 1 https://github.com/Havens-blog/haven-ui.git ../haven-ui
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.30.3
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Install haven-ui deps（link 依赖需自己的 node_modules 供 vue-tsc 解析）
+        run: cd ../haven-ui && pnpm install --frozen-lockfile
+
+      - name: Vitest
+        run: pnpm test

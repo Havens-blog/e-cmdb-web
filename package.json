@@ -3,21 +3,24 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@10.30.3",
   "description": "CMDB 配置管理独立前端（含服务树与拓扑）",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "vue-tsc -b",
-    "test": "vitest run"
+    "test": "vitest run",
+    "drift:check": "node scripts/drift-check.mjs"
   },
   "dependencies": {
+    "@haven/ui": "link:../haven-ui",
     "@element-plus/icons-vue": "^2.3.2",
     "axios": "^1.6.8",
     "echarts": "^5.5.0",
     "element-plus": "2.11.7",
     "pinia": "3.0.4",
-    "pinia-plugin-persistedstate": "^3.2.0",
+    "pinia-plugin-persistedstate": "^4.2.0",
     "vue": "3.5.22",
     "vue-router": "4.6.3"
   },
