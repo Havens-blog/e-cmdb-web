@@ -243,11 +243,10 @@ import { fetchAllRows } from '@/utils/exportAll'
 import { Download, Plus, Refresh, Search, Setting } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, reactive, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import ColumnSettingsDialog, { type ColumnConfig } from './components/ColumnSettingsDialog.vue'
 import InstanceForm from './components/InstanceForm.vue'
 
-const router = useRouter()
 const route = useRoute()
 
 // 资产类型映射 - 用于跳转到对应详情页
@@ -594,11 +593,10 @@ const handleViewDetail = (row: InstanceVO) => {
   const routeInfo = assetTypeRouteMap[assetType]
   
   if (routeInfo) {
-    // 跳转到对应资产类型的列表页，带上搜索参数定位到具体实例
-    router.push({
-      path: routeInfo.route,
-      query: { search: row.asset_name || row.asset_id }
-    })
+    // 资产详情页在 e-cam-web（nginx /cam/ 前缀）——跨应用新窗口打开并带搜索
+    // 参数定位实例；SPA 内 router.push 会命中 CMDB 的 catch-all（跳仪表盘）
+    const search = encodeURIComponent(row.asset_name || row.asset_id || '')
+    window.open(`/cam${routeInfo.route}?search=${search}`, '_blank')
   } else {
     ElMessage.warning(`暂不支持查看 ${assetType} 类型的详情`)
   }

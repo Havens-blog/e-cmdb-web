@@ -1,13 +1,13 @@
 /**
- * CMDB (配置管理数据�? API
- * 资源模型和实例管理接�?
+ * CMDB (配置管理数据库) API
+ * 资源模型和实例管理接口
  */
 
 import type { AxiosResponse } from 'axios'
 import instance from './request/service'
 import type * as cmdb from './types/cmdb'
 
-// CMDB API 响应拦截�?
+// CMDB API 响应拦截器
 function createCmdbApiInterceptor() {
     return {
         responseInterceptor: (response: AxiosResponse) => {
@@ -113,7 +113,7 @@ export function listModelGroupsWithModelsApi() {
     })
 }
 
-/** 初始化内置分�?*/
+/** 初始化内置分组 */
 export function initBuiltinModelGroupsApi() {
     return instance.post<cmdb.SuccessResp>({
         url: `/cmdb/model-groups/init`,
@@ -175,7 +175,7 @@ export function createCmdbInstanceBatchApi(data: cmdb.CreateBatchInstanceReq) {
     })
 }
 
-/** 更新或插入实�?*/
+/** 更新或插入实例 */
 export function upsertCmdbInstanceApi(data: cmdb.UpsertInstanceReq) {
     return instance.post<cmdb.SuccessResp>({
         url: `/cmdb/instances/upsert`,
@@ -184,7 +184,7 @@ export function upsertCmdbInstanceApi(data: cmdb.UpsertInstanceReq) {
     })
 }
 
-/** 批量更新或插入实�?*/
+/** 批量更新或插入实例 */
 export function upsertCmdbInstanceBatchApi(data: cmdb.UpsertBatchInstanceReq) {
     return instance.post<cmdb.SuccessResp>({
         url: `/cmdb/instances/upsert-batch`,
@@ -303,7 +303,7 @@ export function deleteInstanceRelationApi(id: number) {
 
 // ==================== 拓扑 API ====================
 
-/** 获取实例拓扑�?*/
+/** 获取实例拓扑图 */
 export function getInstanceTopologyApi(id: number, params?: cmdb.GetInstanceTopologyParams) {
     return instance.get<cmdb.TopologyGraphResp>({
         url: `/cmdb/topology/instance/${id}`,
@@ -312,7 +312,7 @@ export function getInstanceTopologyApi(id: number, params?: cmdb.GetInstanceTopo
     })
 }
 
-/** 获取模型拓扑�?*/
+/** 获取模型拓扑图 */
 export function getModelTopologyApi(provider?: string) {
     return instance.get<cmdb.ModelTopologyGraphResp>({
         url: `/cmdb/topology/model`,
@@ -340,9 +340,9 @@ export function getFieldTypesApi() {
     })
 }
 
-// ==================== 模型属�?API ====================
+// ==================== 模型属性 API ====================
 
-/** 创建模型属�?*/
+/** 创建模型属性 */
 export function createAttributeApi(modelUid: string, data: cmdb.CreateAttributeReq) {
     return instance.post<cmdb.CreateIDResp>({
         url: `/cmdb/models/${modelUid}/attributes`,
@@ -351,7 +351,7 @@ export function createAttributeApi(modelUid: string, data: cmdb.CreateAttributeR
     })
 }
 
-/** 获取模型属性列�?*/
+/** 获取模型属性列表 */
 export function listAttributesApi(modelUid: string, params?: cmdb.ListAttributesParams) {
     return instance.get<cmdb.AttributeListResp>({
         url: `/cmdb/models/${modelUid}/attributes`,
@@ -360,7 +360,7 @@ export function listAttributesApi(modelUid: string, params?: cmdb.ListAttributes
     })
 }
 
-/** 获取分组后的属性列�?*/
+/** 获取分组后的属性列表 */
 export function listAttributesWithGroupsApi(modelUid: string) {
     return instance.get<cmdb.AttributeGroupWithAttrsListResp>({
         url: `/cmdb/models/${modelUid}/attributes/grouped`,
@@ -368,7 +368,7 @@ export function listAttributesWithGroupsApi(modelUid: string) {
     })
 }
 
-/** 获取属性详�?*/
+/** 获取属性详情 */
 export function getAttributeApi(modelUid: string, id: number) {
     return instance.get<cmdb.AttributeResp>({
         url: `/cmdb/models/${modelUid}/attributes/${id}`,
@@ -376,7 +376,7 @@ export function getAttributeApi(modelUid: string, id: number) {
     })
 }
 
-/** 更新属�?*/
+/** 更新属性 */
 export function updateAttributeApi(modelUid: string, id: number, data: cmdb.UpdateAttributeReq) {
     return instance.put<cmdb.SuccessResp>({
         url: `/cmdb/models/${modelUid}/attributes/${id}`,
@@ -385,7 +385,7 @@ export function updateAttributeApi(modelUid: string, id: number, data: cmdb.Upda
     })
 }
 
-/** 删除属�?*/
+/** 删除属性 */
 export function deleteAttributeApi(modelUid: string, id: number) {
     return instance.delete<cmdb.SuccessResp>({
         url: `/cmdb/models/${modelUid}/attributes/${id}`,
@@ -393,9 +393,9 @@ export function deleteAttributeApi(modelUid: string, id: number) {
     })
 }
 
-// ==================== 属性分�?API ====================
+// ==================== 属性分组 API ====================
 
-/** 创建属性分�?*/
+/** 创建属性分组 */
 export function createAttributeGroupApi(modelUid: string, data: cmdb.CreateAttributeGroupReq) {
     return instance.post<cmdb.CreateIDResp>({
         url: `/cmdb/models/${modelUid}/attribute-groups`,
@@ -404,7 +404,7 @@ export function createAttributeGroupApi(modelUid: string, data: cmdb.CreateAttri
     })
 }
 
-/** 获取属性分组列�?*/
+/** 获取属性分组列表 */
 export function listAttributeGroupsApi(modelUid: string) {
     return instance.get<cmdb.AttributeGroupListResp>({
         url: `/cmdb/models/${modelUid}/attribute-groups`,
@@ -412,7 +412,7 @@ export function listAttributeGroupsApi(modelUid: string) {
     })
 }
 
-/** 获取属性分组详�?*/
+/** 获取属性分组详情 */
 export function getAttributeGroupApi(modelUid: string, id: number) {
     return instance.get<cmdb.AttributeGroupResp>({
         url: `/cmdb/models/${modelUid}/attribute-groups/${id}`,
@@ -420,7 +420,7 @@ export function getAttributeGroupApi(modelUid: string, id: number) {
     })
 }
 
-/** 更新属性分�?*/
+/** 更新属性分组 */
 export function updateAttributeGroupApi(modelUid: string, id: number, data: cmdb.UpdateAttributeGroupReq) {
     return instance.put<cmdb.SuccessResp>({
         url: `/cmdb/models/${modelUid}/attribute-groups/${id}`,
@@ -429,7 +429,7 @@ export function updateAttributeGroupApi(modelUid: string, id: number, data: cmdb
     })
 }
 
-/** 删除属性分�?*/
+/** 删除属性分组 */
 export function deleteAttributeGroupApi(modelUid: string, id: number) {
     return instance.delete<cmdb.SuccessResp>({
         url: `/cmdb/models/${modelUid}/attribute-groups/${id}`,
