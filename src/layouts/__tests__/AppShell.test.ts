@@ -144,7 +144,7 @@ describe('AppShell 侧栏状态', () => {
     })
 })
 
-describe('AppShell WatchAlert 布局（黑底悬浮壳）', () => {
+describe('AppShell 布局（悬浮壳 + 平台品牌令牌）', () => {
     it('无独立顶栏：header 职能（logo/租户/用户）全在侧边栏，结构齐全', () => {
         const wrapper = mountShell()
         // 侧边栏 header 区：居中 logo + 租户徽标 + 渐变分割线

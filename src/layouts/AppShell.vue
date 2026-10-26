@@ -3,19 +3,21 @@
  * 应用外壳：header + 侧边栏参考 WatchAlert（opsre/WatchAlert-web）设计。
  *
  * 【设计来源】
- * 布局与交互规格取自 WatchAlert-web src/components/index.jsx + sider/index.jsx：
- * - 纯黑页面底（#000），侧边栏与内容区均为「悬浮圆角卡片」，四周留 16px 呼吸缝；
- * - 侧栏 210px / 折叠 64px、圆角 12px，自上而下：居中 logo → 租户徽标（半透明
- *   底 + 品牌色描边）→ 品牌色渐变分割线 → 分组菜单 → 底部毛玻璃操作区；
- * - 菜单项 38px 高 / 8px 圆角 / 4px 8px 外边距 / 13px 字号，hover 右移 6px +
- *   品牌浅色，激活态品牌渐变底（息壤 #7170ff→#5e6ad2，替代 WatchAlert 金色渐变，
- *   与平台 e-cam-web 品牌一致）+ 白字 + 品牌色投影；
- * - 无独立顶栏：logo / 租户 / 用户职能全在侧边栏（与 WatchAlert 一致），
- *   内容卡片内部滚动，底部居中品牌 footer。
+ * 布局骨架取自 WatchAlert-web（悬浮圆角卡片 + 无独立顶栏的轻量子应用壳），
+ * 品牌/视觉已对齐平台（e-cam-web / haven-console 同款 @haven/ui/theme 令牌）：
+ * - 页面底 var(--bg-base)（#08090a，非纯黑），侧边栏与内容区为「悬浮圆角卡片」，
+ *   四周留 16px 呼吸缝；
+ * - 侧栏 210px / 折叠 64px、圆角 12px，自上而下：居中 logo（完整息壤 mark +
+ *   「息壤 XIRANG CLOUD」）→ 租户徽标（半透明底 + 品牌色描边）→ 品牌色渐变
+ *   分割线 → 分组菜单 → 底部毛玻璃操作区；
+ * - 菜单项 40px 高 / 8px 圆角 / 2px 8px 外边距 / 14px 字号，hover bg-hover 底 +
+ *   主文字色，激活态品牌色 15% 淡染底（color-mix）+ 蓝紫文字（与平台菜单一致）；
+ * - 无独立顶栏：logo / 租户 / 用户职能全在侧边栏，内容卡片内部滚动，
+ *   底部居中品牌 footer。
  *
  * 【主题策略】
- * 壳层固定黑底（WatchAlert 形态），内容卡片背景 var(--bg-elevated) 跟随本仓
- * 深浅主题——浅色主题下即「黑底 + 白色内容卡」的 WatchAlert 观感。
+ * 壳背景 var(--bg-base)、侧栏/内容卡表面 var(--bg-elevated)，均消费
+ * @haven/ui/theme 令牌，随本仓深浅主题切换（浅色主题下即「浅底 + 白色内容卡」）。
  * 刻意不改 theme-variables.scss（该文件在 drift 登记面，见 shared-hashes.json）。
  *
  * 【租户透传（与路由守卫闭环，关键）】
@@ -75,21 +77,33 @@ function isActive(path: string): boolean {
                         <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
                             <title>息壤 Xirang</title>
                             <defs>
-                                <linearGradient id="xrm-shell-top" x1="8" y1="22" x2="56" y2="46" gradientUnits="userSpaceOnUse">
+                                <linearGradient id="xrm-top" x1="8" y1="22" x2="56" y2="46" gradientUnits="userSpaceOnUse">
                                     <stop offset="0" stop-color="#7170ff" />
                                     <stop offset="1" stop-color="#5e6ad2" />
                                 </linearGradient>
+                                <linearGradient id="xrm-sprout" x1="32" y1="34" x2="32" y2="6" gradientUnits="userSpaceOnUse">
+                                    <stop offset="0" stop-color="#7170ff" />
+                                    <stop offset="1" stop-color="#a5b4fc" />
+                                </linearGradient>
                             </defs>
-                            <path d="M32 22 L56 34 L32 46 L8 34 Z" fill="url(#xrm-shell-top)" />
-                            <g stroke="#7170ff" stroke-width="3" stroke-linecap="round" fill="none">
+                            <path d="M8 46 L32 58 L56 46" fill="none" stroke="#5e6ad2" stroke-opacity="0.45" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+                            <path d="M8 40 L32 52 L56 40" fill="none" stroke="#5e6ad2" stroke-opacity="0.75" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+                            <path d="M32 22 L56 34 L32 46 L8 34 Z" fill="url(#xrm-top)" />
+                            <g stroke="url(#xrm-sprout)" stroke-width="3" stroke-linecap="round" fill="none">
                                 <path d="M32 34 V14" />
                                 <path d="M32 24 L22 17" />
                                 <path d="M32 24 L42 17" />
                             </g>
                             <circle cx="32" cy="34" r="3.2" fill="#ffffff" />
+                            <circle cx="32" cy="11" r="3.6" fill="#a5b4fc" />
+                            <circle cx="20" cy="15.5" r="3" fill="#8b93ff" />
+                            <circle cx="44" cy="15.5" r="3" fill="#8b93ff" />
                         </svg>
                     </div>
-                    <span v-if="!appStore.sidebarCollapsed" class="logo-wordmark">CMDB</span>
+                    <span v-if="!appStore.sidebarCollapsed" class="logo-wordmark">
+                        <span class="wm-cn">息壤</span>
+                        <span class="wm-en">XIRANG CLOUD</span>
+                    </span>
                 </div>
 
                 <div class="tenant-badge" title="当前租户（由平台跳转 ?tenant_id= 透传）">
@@ -166,8 +180,7 @@ function isActive(path: string): boolean {
 </template>
 
 <style scoped lang="scss">
-// WatchAlert 形态常量（局部作用域，刻意不进 theme-variables.scss 漂移登记面）
-$shell-bg: #000000;
+// 品牌常量（局部作用域）；壳背景/侧栏表面改用 @haven/ui/theme 令牌，与平台对齐
 $brand-a: #7170ff;
 $brand-b: #5e6ad2;
 $brand-light: #a5a4ff;
@@ -180,7 +193,7 @@ $sidebar-collapsed-width: 64px;
     height: 100vh;
     padding: 16px;
     overflow: hidden;
-    background: $shell-bg;
+    background: var(--bg-base);
 }
 
 .sidebar {
@@ -189,8 +202,8 @@ $sidebar-collapsed-width: 64px;
     width: $sidebar-width;
     flex-shrink: 0;
     overflow: hidden;
-    background: $shell-bg;
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
     transition: width 300ms cubic-bezier(0.645, 0.045, 0.355, 1);
@@ -239,12 +252,28 @@ $sidebar-collapsed-width: 64px;
     }
 
     .logo-wordmark {
-        font-family: 'Inter Variable', Inter, 'Segoe UI', Roboto, Arial, sans-serif;
-        font-size: 15px;
-        font-weight: 700;
-        letter-spacing: 4px;
-        color: rgba(255, 255, 255, 0.92);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        line-height: 1;
         white-space: nowrap;
+
+        .wm-cn {
+            font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', 'Source Han Sans SC', sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            color: var(--text-primary);
+        }
+
+        .wm-en {
+            font-family: 'Inter Variable', Inter, 'Segoe UI', Roboto, Arial, sans-serif;
+            font-size: 8.5px;
+            font-weight: 600;
+            letter-spacing: 3px;
+            color: var(--accent-blue);
+        }
     }
 }
 
@@ -325,48 +354,55 @@ $sidebar-collapsed-width: 64px;
     display: flex;
     align-items: center;
     gap: 10px;
-    height: 38px;
+    height: 40px;
     padding: 0 16px;
-    margin: 4px 8px;
+    margin: 2px 8px;
     border-radius: 8px;
-    font-size: 13px;
-    color: #cccccc;
+    font-size: 14px;
+    color: var(--text-secondary);
     text-decoration: none;
     cursor: pointer;
     position: relative;
-    will-change: transform;
-    transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
+    transition: all 150ms ease;
 
     .menu-icon {
         flex-shrink: 0;
         width: 16px;
         font-size: 15px;
         line-height: 1;
-        color: inherit;
+        color: var(--text-secondary);
     }
 
     .menu-title {
         flex: 1;
-        font-size: 13px;
+        font-size: 14px;
         line-height: 1;
         white-space: nowrap;
-        color: inherit;
+        color: var(--text-regular);
     }
 
-    // 悬停：右移 + 品牌浅色（WatchAlert translateX(6px) 动效同构）
-    &:hover:not(.active) {
-        background: rgba(113, 112, 255, 0.12);
-        color: $brand-light;
-        transform: translateX(6px);
+    // 悬停：平台同款——bg-hover 底 + 主文字色（去掉 WatchAlert translateX(6px) 右移动效）
+    &:hover {
+        background: var(--bg-hover);
+
+        .menu-icon,
+        .menu-title {
+            color: var(--text-primary);
+        }
     }
 
-    // 激活态：品牌渐变底 + 白字 + 品牌色投影（替代 WatchAlert 金色渐变）
+    // 激活态：平台同款——品牌色 15% 淡染底 + 蓝紫文字（替代 WatchAlert 渐变全底 + 白字）
     &.active {
-        background: linear-gradient(135deg, $brand-a 0%, $brand-b 100%);
-        color: #ffffff;
-        font-weight: 600;
-        box-shadow: 0 4px 12px rgba(94, 106, 210, 0.35);
-        transform: none;
+        background: color-mix(in srgb, var(--accent-primary) 15%, transparent);
+
+        .menu-icon,
+        .menu-title {
+            color: var(--accent-blue);
+        }
+
+        .menu-title {
+            font-weight: 600;
+        }
     }
 }
 
