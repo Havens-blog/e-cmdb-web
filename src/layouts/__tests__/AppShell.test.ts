@@ -15,7 +15,7 @@ import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createMemoryHistory, createRouter, type Router } from 'vue-router'
-import { clearTenantId, setTenantId } from '@/api/tenantContext'
+import { clearTenantId, setTenantId, setTenantName } from '@/api/tenantContext'
 import { useAppStore } from '@/stores/app'
 import { menuGroups } from '../menu-config'
 import AppShell from '../AppShell.vue'
@@ -124,6 +124,17 @@ describe('AppShell 侧栏状态', () => {
         clearTenantId()
         await nextTick()
         expect(wrapper.find('.tenant-badge').text()).toBe('未选定租户')
+    })
+
+    it('租户名已知时徽标显示名称（未知则回退「租户 #<id>」）', async () => {
+        setTenantId(12)
+        setTenantName('息壤科技')
+        const wrapper = mountShell()
+        expect(wrapper.find('.tenant-badge').text()).toBe('息壤科技')
+        // 清名（未知名）→ 回退数字
+        setTenantName('')
+        await nextTick()
+        expect(wrapper.find('.tenant-badge').text()).toBe('租户 #12')
     })
 
     it('折叠按钮切换 sidebarCollapsed，折叠后隐藏分组标题与菜单文字', async () => {

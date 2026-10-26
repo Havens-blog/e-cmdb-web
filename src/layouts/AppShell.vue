@@ -33,7 +33,7 @@
  */
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { getTenantId } from '@/api/tenantContext'
+import { getTenantId, getTenantName } from '@/api/tenantContext'
 import { useAppStore } from '@/stores/app'
 import { buildTenantUrl } from '@/utils/tenantFromUrl'
 import { menuGroups } from './menu-config'
@@ -46,7 +46,12 @@ const platformHome = import.meta.env.VITE_PLATFORM_HOME || '/cam/'
 
 // 守卫保证进入本壳时租户已选定（>0）；0 仅在测试/异常态出现，徽标显示为「未选定」
 const tenantId = computed(() => getTenantId())
-const tenantLabel = computed(() => (tenantId.value > 0 ? `租户 #${tenantId.value}` : '未选定租户'))
+const tenantLabel = computed(() => {
+    if (tenantId.value <= 0) return '未选定租户'
+    // 优先展示租户名（自 eiam profile tenants 解析）；未知名回退「租户 #<id>」
+    const name = getTenantName()
+    return name || `租户 #${tenantId.value}`
+})
 
 /**
  * 菜单跳转地址：SPA 内导航必须携带当前租户，否则守卫视为「未带租户」弹回登录。
