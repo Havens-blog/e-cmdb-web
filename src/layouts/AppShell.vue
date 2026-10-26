@@ -18,7 +18,6 @@
  * 【主题策略】
  * 壳背景 var(--bg-base)、侧栏/内容卡表面 var(--bg-elevated)，均消费
  * @haven/ui/theme 令牌，随本仓深浅主题切换（浅色主题下即「浅底 + 白色内容卡」）。
- * 刻意不改 theme-variables.scss（该文件在 drift 登记面，见 shared-hashes.json）。
  *
  * 【租户透传（与路由守卫闭环，关键）】
  * 平台侧 AppSidebar 对 /cmdb/* 是 window.open(item.path) 新窗口打开，**不带
