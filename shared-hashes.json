@@ -10,6 +10,14 @@
   ],
   "files": [
     {
+      "path": "public/xirang-mark.svg",
+      "sourcePath": "public/xirang-mark.svg",
+      "category": "asset",
+      "sourceCommit": "76b9faeaf0375ceff43bfe005f88bc873a9d03e5",
+      "sourceCommitDate": "2026-10-13",
+      "sha256": "fed0c130e78a975717b84a2f090cea22521372cf8a18538a7826d8493cef0bd3"
+    },
+    {
       "path": "src/api/dns.ts",
       "sourcePath": "src/api/dns.ts",
       "category": "request-layer",
