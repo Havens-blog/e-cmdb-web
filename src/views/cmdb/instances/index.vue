@@ -240,6 +240,7 @@ import { IconFont } from '@haven/ui/IconFont'
 import { ManagerHeader } from '@haven/ui/ManagerHeader'
 import { safeTagType, getProviderLabel as getProviderLabelRaw, getProviderLabel as getProviderLabelShared } from '@/utils/constants'
 import { fetchAllRows } from '@/utils/exportAll'
+import { formatTimestamp } from '@/utils/time'
 import { Download, Plus, Refresh, Search, Setting } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, reactive, ref } from 'vue'
@@ -410,19 +411,8 @@ const getStatusLabel = (status: string) => {
   return labelMap[status] || status || '-'
 }
 
-// 格式化时间
-const formatTime = (time: number | string | undefined) => {
-  if (!time) return '-'
-  const date = typeof time === 'number' ? new Date(time * 1000) : new Date(time)
-  if (isNaN(date.getTime())) return '-'
-  return date.toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
+// 格式化时间（毫秒时间戳；create_time/update_time 均为 Unix 毫秒，勿再 ×1000）
+const formatTime = (time: number | string | undefined) => formatTimestamp(time)
 
 // 格式化标签
 const formatTags = (tags: Record<string, string> | undefined) => {
@@ -538,9 +528,7 @@ const exportConfig: ExportFieldConfig<InstanceVO> = {
     if (key === 'creation_time') {
       const time = attr.creation_time || instance.create_time
       if (!time) return ''
-      const date = typeof time === 'number' ? new Date(time * 1000) : new Date(time)
-      if (isNaN(date.getTime())) return ''
-      return date.toLocaleString('zh-CN')
+      return formatTimestamp(time, true)
     }
     return attr[key] || ''
   },
