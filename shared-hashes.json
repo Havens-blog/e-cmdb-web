@@ -89,7 +89,8 @@
       "category": "design-tokens",
       "sourceCommit": "ff629baa13e9ba927bc5d22b06da8bd27b226abc",
       "sourceCommitDate": "2026-09-20",
-      "sha256": "fdeebced75613f84dfb721f1374aa61236f31c664dc8be56f3e8fbbc45b866f2"
+      "sha256": "a1ab67d49e50cb845a3c5182af3d6737755e3b8b64d4ea5f8fa0966d29c15892",
+      "note": "协同变更（阶段 2 tokens 单源化）：与 e-cam-web 同删 `@import './theme-variables.scss'`（主题令牌改由 @haven/ui/theme 单一来源），两仓 index.scss 仍逐字节一致，仅刷新 sha256。sourceCommit 保持上一登记值（工作区未提交，无新 commit 可记）。"
     },
     {
       "path": "src/assets/styles/mixins.scss",
@@ -106,14 +107,6 @@
       "sourceCommit": "08de2a10c3f1a9bb1622229a37117cabe977e8ef",
       "sourceCommitDate": "2026-01-21",
       "sha256": "78fdb17b94d336d9b3ac8b31797520323c6b1efb8a1ae6547761420925486c29"
-    },
-    {
-      "path": "src/assets/styles/theme-variables.scss",
-      "sourcePath": "src/assets/styles/theme-variables.scss",
-      "category": "design-tokens",
-      "sourceCommit": "d28829e0d119666ae0ca9c4d4129e9d29e83dc0e",
-      "sourceCommitDate": "2026-09-20",
-      "sha256": "7c9a007dbf563859dcd577784d1382bca91ed662514066a09bc7c96563d337fc"
     },
     {
       "path": "src/assets/styles/variables.scss",
@@ -140,14 +133,6 @@
       "sha256": "c82ef81d82431bfee8509f92427d547039d4cb51a8aaed6dfd576f75f0d9f154"
     },
     {
-      "path": "src/utils/cookie.ts",
-      "sourcePath": "src/utils/cookie.ts",
-      "category": "util",
-      "sourceCommit": "fa0e3f8a32e37644f051e05d3f388e4509cd33fa",
-      "sourceCommitDate": "2026-03-28",
-      "sha256": "357d859cb2d34884c744cab81f9e22fc99edc91cefd8cd8606171c853e489878"
-    },
-    {
       "path": "src/utils/error-handler.ts",
       "sourcePath": "src/utils/error-handler.ts",
       "category": "util",
@@ -170,14 +155,6 @@
       "sourceCommit": "5739d7e0d12c0b9985cb672d302ec408de5b7b61",
       "sourceCommitDate": "2026-10-10",
       "sha256": "2d8dd7183204bb88ac106bcad210bb19514f69aa30fdf584449cd849967f58ff"
-    },
-    {
-      "path": "src/utils/format.ts",
-      "sourcePath": "src/utils/format.ts",
-      "category": "util",
-      "sourceCommit": "08de2a10c3f1a9bb1622229a37117cabe977e8ef",
-      "sourceCommitDate": "2026-01-21",
-      "sha256": "5d7587f9dcab5934827d0b8543e66ef19e86e71b5786c0eb69af0dced33b9a2f"
     },
     {
       "path": "src/utils/icon-mapping.ts",
