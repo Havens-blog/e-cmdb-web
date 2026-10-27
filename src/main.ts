@@ -3,6 +3,9 @@ import App from './App.vue'
 import { router } from './router'
 import pinia from './stores'
 
+// 主题令牌（单一来源 @haven/ui；在 index.scss 之前加载）
+import '@haven/ui/theme'
+
 // 全局样式（Linear 深色主题 + Element Plus 覆盖）
 import './assets/styles/index.scss'
 
