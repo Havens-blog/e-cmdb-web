@@ -387,8 +387,8 @@ const handleCreateRelation = async () => {
     const data: CreateModelRelationReq = {
       uid: relationDialog.form.uid,
       name: relationDialog.form.name,
-      source_uid: src.uid,
-      target_uid: tgt.uid,
+      source_model_uid: src.uid,
+      target_model_uid: tgt.uid,
       relation_type: relationDialog.form.relation_type,
       direction: relationDialog.form.direction,
       source_to_target: relationDialog.form.source_to_target,
