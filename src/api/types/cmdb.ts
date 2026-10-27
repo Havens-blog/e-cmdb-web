@@ -286,8 +286,8 @@ export type RelationDirection = 'one_to_one' | 'one_to_many' | 'many_to_many'
 export interface CreateModelRelationReq {
     uid: string
     name: string
-    source_uid: string
-    target_uid: string
+    source_model_uid: string
+    target_model_uid: string
     relation_type: RelationType
     direction?: RelationDirection
     source_to_target?: string
@@ -308,8 +308,8 @@ export interface ModelRelationVO {
     id: number
     uid: string
     name: string
-    source_uid: string
-    target_uid: string
+    source_model_uid: string
+    target_model_uid: string
     relation_type: string
     direction: string
     source_to_target?: string
@@ -321,8 +321,8 @@ export interface ModelRelationVO {
 
 /** 模型关系类型列表查询参数 */
 export interface ListModelRelationsParams {
-    source_uid?: string
-    target_uid?: string
+    source_model_uid?: string
+    target_model_uid?: string
     relation_type?: string
     offset?: number
     limit?: number

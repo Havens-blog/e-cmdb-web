@@ -8,14 +8,14 @@
       <el-input v-model="form.name" placeholder="如 ECS属于VPC" />
     </el-form-item>
 
-    <el-form-item label="源模型" prop="source_uid">
-      <el-select v-model="form.source_uid" placeholder="请选择源模型" filterable :disabled="isEdit" style="width: 100%">
+    <el-form-item label="源模型" prop="source_model_uid">
+      <el-select v-model="form.source_model_uid" placeholder="请选择源模型" filterable :disabled="isEdit" style="width: 100%">
         <el-option v-for="m in models" :key="m.uid" :label="`${m.name} (${m.uid})`" :value="m.uid" />
       </el-select>
     </el-form-item>
 
-    <el-form-item label="目标模型" prop="target_uid">
-      <el-select v-model="form.target_uid" placeholder="请选择目标模型" filterable :disabled="isEdit" style="width: 100%">
+    <el-form-item label="目标模型" prop="target_model_uid">
+      <el-select v-model="form.target_model_uid" placeholder="请选择目标模型" filterable :disabled="isEdit" style="width: 100%">
         <el-option v-for="m in models" :key="m.uid" :label="`${m.name} (${m.uid})`" :value="m.uid" />
       </el-select>
     </el-form-item>
@@ -70,8 +70,8 @@ const formRef = ref<FormInstance>()
 const form = reactive({
   uid: '',
   name: '',
-  source_uid: '',
-  target_uid: '',
+  source_model_uid: '',
+  target_model_uid: '',
   relation_type: 'belongs_to' as RelationType,
   direction: 'one_to_many' as RelationDirection,
   source_to_target: '',
@@ -82,8 +82,8 @@ const form = reactive({
 const rules: FormRules = {
   uid: [{ required: true, message: '请输入关系UID', trigger: 'blur' }],
   name: [{ required: true, message: '请输入关系名称', trigger: 'blur' }],
-  source_uid: [{ required: true, message: '请选择源模型', trigger: 'change' }],
-  target_uid: [{ required: true, message: '请选择目标模型', trigger: 'change' }],
+  source_model_uid: [{ required: true, message: '请选择源模型', trigger: 'change' }],
+  target_model_uid: [{ required: true, message: '请选择目标模型', trigger: 'change' }],
   relation_type: [{ required: true, message: '请选择关系类型', trigger: 'change' }],
 }
 
@@ -91,8 +91,8 @@ watch(() => props.relation, (val) => {
   if (val) {
     form.uid = val.uid
     form.name = val.name
-    form.source_uid = val.source_uid
-    form.target_uid = val.target_uid
+    form.source_model_uid = val.source_model_uid
+    form.target_model_uid = val.target_model_uid
     form.relation_type = val.relation_type as RelationType
     form.direction = (val.direction || 'one_to_many') as RelationDirection
     form.source_to_target = val.source_to_target || ''
@@ -116,8 +116,8 @@ const submit = async () => {
     await createModelRelationApi({
       uid: form.uid,
       name: form.name,
-      source_uid: form.source_uid,
-      target_uid: form.target_uid,
+      source_model_uid: form.source_model_uid,
+      target_model_uid: form.target_model_uid,
       relation_type: form.relation_type,
       direction: form.direction,
       source_to_target: form.source_to_target || undefined,
@@ -130,8 +130,8 @@ const submit = async () => {
 const reset = () => {
   form.uid = ''
   form.name = ''
-  form.source_uid = ''
-  form.target_uid = ''
+  form.source_model_uid = ''
+  form.target_model_uid = ''
   form.relation_type = 'belongs_to'
   form.direction = 'one_to_many'
   form.source_to_target = ''

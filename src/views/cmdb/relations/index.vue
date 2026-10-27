@@ -96,7 +96,7 @@
           <div class="filter-item">
             <span class="filter-label">源模型</span>
             <el-select
-              v-model="filters.source_uid"
+              v-model="filters.source_model_uid"
               placeholder="全部"
               clearable
               filterable
@@ -148,10 +148,10 @@
             </div>
           </div>
           <div class="col-source">
-            <code class="model-code">{{ relation.source_uid }}</code>
+            <code class="model-code">{{ relation.source_model_uid }}</code>
           </div>
           <div class="col-target">
-            <code class="model-code">{{ relation.target_uid }}</code>
+            <code class="model-code">{{ relation.target_model_uid }}</code>
           </div>
           <div class="col-type">
             <span class="type-badge" :class="getTypeClass(relation.relation_type)">
@@ -298,7 +298,7 @@ const modelOptions = ref<ModelVO[]>([])
 const filters = reactive({
   keyword: '',
   relation_type: '',
-  source_uid: '',
+  source_model_uid: '',
 })
 
 const searchTimer = ref<number | null>(null)
@@ -310,7 +310,7 @@ const pagination = reactive({
 })
 
 const dialogTitle = computed(() => (isEdit.value ? '编辑关系' : '创建关系'))
-const hasFilters = computed(() => filters.keyword || filters.relation_type || filters.source_uid)
+const hasFilters = computed(() => filters.keyword || filters.relation_type || filters.source_model_uid)
 const totalPages = computed(() => Math.ceil(pagination.total / pagination.size) || 1)
 
 const belongsToCount = computed(() => relations.value.filter(r => r.relation_type === 'belongs_to').length)
@@ -391,7 +391,7 @@ const fetchRelations = async () => {
   loading.value = true
   try {
     const params = {
-      source_uid: filters.source_uid || undefined,
+      source_model_uid: filters.source_model_uid || undefined,
       relation_type: filters.relation_type || undefined,
       offset: (pagination.page - 1) * pagination.size,
       limit: pagination.size,
@@ -420,7 +420,7 @@ const handleFilterChange = () => {
 const handleResetFilters = () => {
   filters.keyword = ''
   filters.relation_type = ''
-  filters.source_uid = ''
+  filters.source_model_uid = ''
   pagination.page = 1
   fetchRelations()
 }

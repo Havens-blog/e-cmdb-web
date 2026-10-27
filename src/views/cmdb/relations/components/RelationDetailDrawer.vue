@@ -25,11 +25,11 @@
           <div class="info-grid">
             <div class="info-item">
               <span class="info-label">源模型</span>
-              <code class="info-code">{{ relation.source_uid }}</code>
+              <code class="info-code">{{ relation.source_model_uid }}</code>
             </div>
             <div class="info-item">
               <span class="info-label">目标模型</span>
-              <code class="info-code">{{ relation.target_uid }}</code>
+              <code class="info-code">{{ relation.target_model_uid }}</code>
             </div>
             <div class="info-item">
               <span class="info-label">关系类型</span>
