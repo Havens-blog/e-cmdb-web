@@ -16,11 +16,16 @@
  * ginx 信封 { code, msg, data }，成功 code === 0，data.current_tenant_id 为数字。
  */
 import { eiamAxios } from './request/eiam'
-import { setTenantId } from './tenantContext'
+import { setTenantId, setTenantName } from './tenantContext'
+
+interface ProfileTenant {
+    id?: unknown
+    name?: unknown
+}
 
 interface ProfileEnvelope {
     code?: number
-    data?: { current_tenant_id?: unknown }
+    data?: { current_tenant_id?: unknown; tenants?: ProfileTenant[] }
 }
 
 /**
@@ -36,6 +41,11 @@ export async function bootstrapTenantFromSession(): Promise<number> {
         const tid = typeof raw === 'number' ? raw : Number(raw)
         if (!Number.isFinite(tid) || !Number.isInteger(tid) || tid <= 0) return 0
         setTenantId(tid)
+        // 租户名：profile 的 tenants 数组按 current_tenant_id 匹配（与平台 TenantSelector 同款回退口径：
+        // 找到→名称，找不到/空名→空串，UI 回退「租户 #<id>」）
+        const tenants = Array.isArray(body.data?.tenants) ? body.data.tenants : []
+        const match = tenants.find((t) => Number(t?.id) === tid)
+        setTenantName(typeof match?.name === 'string' && match.name !== '' ? match.name : '')
         return tid
     } catch {
         // 网络/401 等：401 时 eiamAxios 拦截器已自行跳登录，这里静默归 0

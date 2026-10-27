@@ -5,7 +5,7 @@
  * 入口（平台旧跳转/书签/刷新/控制台回跳）都被弹回登录，即使会话有效。
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { clearTenantId, getTenantId } from './tenantContext'
+import { clearTenantId, getTenantId, getTenantName } from './tenantContext'
 
 const profileGet = vi.fn()
 
@@ -63,5 +63,43 @@ describe('bootstrapTenantFromSession', () => {
         profileGet.mockRejectedValue(new Error('Network Error'))
         await expect(bootstrapTenantFromSession()).resolves.toBe(0)
         expect(getTenantId()).toBe(0)
+    })
+
+    it('会话有效：profile tenants 数组按 current_tenant_id 匹配写入租户名', async () => {
+        profileGet.mockResolvedValue({
+            data: {
+                code: 0,
+                data: {
+                    current_tenant_id: 7,
+                    tenants: [
+                        { id: 3, name: '甲租户' },
+                        { id: 7, name: '息壤科技' },
+                    ],
+                },
+            },
+        })
+        await expect(bootstrapTenantFromSession()).resolves.toBe(7)
+        expect(getTenantId()).toBe(7)
+        expect(getTenantName()).toBe('息壤科技')
+    })
+
+    it('租户名缺失/空串 → 空串（UI 回退「租户 #<id>」）', async () => {
+        profileGet.mockResolvedValue({
+            data: {
+                code: 0,
+                data: { current_tenant_id: 7, tenants: [{ id: 3, name: '甲租户' }] },
+            },
+        })
+        await expect(bootstrapTenantFromSession()).resolves.toBe(7)
+        expect(getTenantName()).toBe('')
+
+        profileGet.mockResolvedValue({
+            data: {
+                code: 0,
+                data: { current_tenant_id: 7, tenants: [{ id: 7, name: '' }] },
+            },
+        })
+        await expect(bootstrapTenantFromSession()).resolves.toBe(7)
+        expect(getTenantName()).toBe('')
     })
 })

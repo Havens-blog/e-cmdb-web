@@ -15,7 +15,7 @@ import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createMemoryHistory, createRouter, type Router } from 'vue-router'
-import { clearTenantId, setTenantId } from '@/api/tenantContext'
+import { clearTenantId, setTenantId, setTenantName } from '@/api/tenantContext'
 import { useAppStore } from '@/stores/app'
 import { menuGroups } from '../menu-config'
 import AppShell from '../AppShell.vue'
@@ -126,6 +126,17 @@ describe('AppShell 侧栏状态', () => {
         expect(wrapper.find('.tenant-badge').text()).toBe('未选定租户')
     })
 
+    it('租户名已知时徽标显示名称（未知则回退「租户 #<id>」）', async () => {
+        setTenantId(12)
+        setTenantName('息壤科技')
+        const wrapper = mountShell()
+        expect(wrapper.find('.tenant-badge').text()).toBe('息壤科技')
+        // 清名（未知名）→ 回退数字
+        setTenantName('')
+        await nextTick()
+        expect(wrapper.find('.tenant-badge').text()).toBe('租户 #12')
+    })
+
     it('折叠按钮切换 sidebarCollapsed，折叠后隐藏分组标题与菜单文字', async () => {
         const wrapper = mountShell()
         const store = useAppStore()
@@ -144,7 +155,7 @@ describe('AppShell 侧栏状态', () => {
     })
 })
 
-describe('AppShell WatchAlert 布局（黑底悬浮壳）', () => {
+describe('AppShell 布局（悬浮壳 + 平台品牌令牌）', () => {
     it('无独立顶栏：header 职能（logo/租户/用户）全在侧边栏，结构齐全', () => {
         const wrapper = mountShell()
         // 侧边栏 header 区：居中 logo + 租户徽标 + 渐变分割线

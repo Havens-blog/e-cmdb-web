@@ -23,6 +23,8 @@ import { ref } from 'vue'
 
 /** 当前租户 id; 0 = 未选定 (进站守卫未跑 / URL 未带 / 跳回平台态) */
 const tenantId = ref<number>(0)
+/** 当前租户名; 自 eiam profile tenants 数组解析 (空串 = 未知, UI 回退「租户 #<id>」) */
+const tenantName = ref<string>('')
 
 /**
  * 读取当前租户 id (供 axios 拦截器调用)
@@ -41,8 +43,25 @@ export function setTenantId(id: number): void {
 }
 
 /**
+ * 读取当前租户名 (供 AppShell 租户徽标展示)
+ * @returns 当前租户名; 空串 = 未知
+ */
+export function getTenantName(): string {
+    return tenantName.value
+}
+
+/**
+ * 设置当前租户名 (供 tenantBootstrap 在 profile 解析后写入)
+ * @param name 租户名; 空串 = 未知
+ */
+export function setTenantName(name: string): void {
+    tenantName.value = name
+}
+
+/**
  * 清除租户上下文 (401 / 登出 / 切到平台前清理; 当前未使用, 预留)
  */
 export function clearTenantId(): void {
     tenantId.value = 0
+    tenantName.value = ''
 }
