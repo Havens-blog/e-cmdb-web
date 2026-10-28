@@ -95,7 +95,7 @@ onMounted(load)
 
 .page-head { margin-bottom: 24px; }
 .page-title { font-size: 22px; font-weight: 600; margin: 0 0 4px; letter-spacing: -0.01em; }
-.page-subtitle { font-size: 13px; color: var(--text-tertiary); margin: 0; }
+.page-subtitle { font-size: 13px; color: var(--text-secondary); margin: 0; }
 
 .stat-grid {
   display: grid;
@@ -169,6 +169,6 @@ onMounted(load)
 }
 
 .entry-label { font-size: 14px; font-weight: 500; }
-.entry-desc { font-size: 12px; color: var(--text-tertiary); margin-top: 2px; }
+.entry-desc { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
 .entry-arrow { color: var(--text-tertiary); margin-left: auto; font-size: 13px; }
 </style>
