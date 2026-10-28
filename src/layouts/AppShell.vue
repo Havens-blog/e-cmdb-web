@@ -119,7 +119,8 @@ function isActive(path: string): boolean {
             <!-- 品牌色渐变分割线（WatchAlert 金色分割线同构） -->
             <div class="shell-divider" role="presentation"></div>
 
-            <nav class="sidebar-nav">
+            <!-- 主目录导航：需显式命名，否则读屏只报「导航」无法与其他 nav 区分 -->
+            <nav class="sidebar-nav" aria-label="主目录">
                 <div v-for="group in menuGroups" :key="group.title" class="menu-group">
                     <div v-if="!appStore.sidebarCollapsed" class="menu-group-title">{{ group.title }}</div>
                     <router-link
@@ -401,7 +402,9 @@ $sidebar-collapsed-width: 64px;
 
         .menu-icon,
         .menu-title {
-            color: var(--accent-blue);
+            // 直接用 --accent-blue(#7070FF) 在 15% 淡染底上只有 4.31:1（WCAG AA 需 4.5）。
+            // 与白色混到 70% 提亮到约 #A0A0FF → 实测 ≈7.0:1，保留品牌色相同时达标。
+            color: color-mix(in srgb, var(--accent-blue) 70%, #fff);
         }
 
         .menu-title {
@@ -525,7 +528,8 @@ $sidebar-collapsed-width: 64px;
     padding: 2px 0;
     text-align: center;
     font-size: 12px;
-    color: rgba(255, 255, 255, 0.4);
+    /* 40% 白在近黑底上只有 3.76:1（AA 需 4.5）→ 提到 62%（实测 ≈6.5:1） */
+    color: rgba(255, 255, 255, 0.62);
 
     .footer-brand {
         color: $brand-light;
