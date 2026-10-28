@@ -7,6 +7,7 @@ import {
     type ApiToken, type Webhook,
 } from '@/api/open-api'
 import { Plus, Delete, DocumentCopy, RefreshRight } from '@element-plus/icons-vue'
+import { formatTimestamp } from '@/utils/time'
 
 const activeTab = ref<'tokens' | 'webhooks'>('tokens')
 
@@ -136,7 +137,8 @@ onMounted(() => { loadTokens(); loadWebhooks() })
             </template>
           </el-table-column>
           <el-table-column label="过期时间" width="180">
-            <template #default="{ row }">{{ row.expire_at ? new Date(row.expire_at).toLocaleString() : '永不过期' }}</template>
+            <!-- 统一走共享格式化（补零 + 时分）；原实现 toLocaleString() 依赖环境 locale 且不补零 -->
+            <template #default="{ row }">{{ row.expire_at ? formatTimestamp(row.expire_at) : '永不过期' }}</template>
           </el-table-column>
           <el-table-column label="操作" width="100" fixed="right">
             <template #default="{ row }">

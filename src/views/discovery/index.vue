@@ -11,6 +11,7 @@ import {
     type DiscoveryPreviewEntry, type DiscoverySnapshotStatus, type DiscoveryImportSession,
 } from '@/api/discovery'
 import { Cloudy, RefreshRight, VideoPlay } from '@element-plus/icons-vue'
+import { formatTimestamp } from '@/utils/time'
 
 const loading = ref(false)
 const syncing = ref(false)
@@ -103,16 +104,13 @@ function stopPolling() { if (pollTimer) { clearInterval(pollTimer); pollTimer = 
 
 const sessionDone = computed(() => session.value && session.value.status !== 'running')
 
+// 统一走共享格式化（补零 + 时分），与其它页口径一致
 function fmtTime(iso?: string) {
-    if (!iso) return '—'
-    const d = new Date(iso)
-    return isNaN(d.getTime()) ? iso : d.toLocaleString()
+    return formatTimestamp(iso)
 }
 
 function fmtNotAfter(v: string) {
-    if (!v) return '—'
-    const d = new Date(v)
-    return isNaN(d.getTime()) ? v : d.toLocaleDateString()
+    return formatTimestamp(v)
 }
 
 onMounted(load)
