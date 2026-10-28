@@ -222,7 +222,7 @@ onMounted(() => { loadTokens(); loadWebhooks() })
 
 .page-head { margin-bottom: 24px; }
 .page-title { font-size: 22px; font-weight: 600; margin: 0 0 4px; letter-spacing: -0.01em; }
-.page-subtitle { font-size: 13px; color: var(--text-tertiary); margin: 0; }
+.page-subtitle { font-size: 13px; color: var(--text-secondary); margin: 0; }
 
 .toolbar { display: flex; gap: 12px; margin-bottom: 14px; }
 

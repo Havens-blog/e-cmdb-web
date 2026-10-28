@@ -1245,7 +1245,7 @@ onUnmounted(() => {
       .page-subtitle {
         margin: 0;
         font-size: 14px;
-        color: var(--text-tertiary);
+        color: var(--text-secondary);
       }
     }
 

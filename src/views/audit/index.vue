@@ -174,7 +174,7 @@ onMounted(load)
 
 .page-head { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 20px; }
 .page-title { font-size: 22px; font-weight: 600; margin: 0 0 4px; letter-spacing: -0.01em; }
-.page-subtitle { font-size: 13px; color: var(--text-tertiary); margin: 0; }
+.page-subtitle { font-size: 13px; color: var(--text-secondary); margin: 0; }
 .refresh-btn { margin-left: auto; }
 
 .summary-bar { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
