@@ -13,7 +13,7 @@
           <el-tag v-if="viewMode === 'model'" type="info" size="small" effect="plain" style="margin-right: 12px">
             Shift + 拖拽节点可创建关系
           </el-tag>
-          <el-radio-group v-model="viewMode" size="small" @change="handleViewModeChange">
+          <el-radio-group v-model="viewMode" size="small" aria-label="拓扑视图切换" @change="handleViewModeChange">
             <el-radio-button value="model">模型拓扑</el-radio-button>
             <el-radio-button value="instance">实例拓扑</el-radio-button>
           </el-radio-group>
@@ -112,7 +112,7 @@
         </div>
         <div class="legend-divider"></div>
         <template v-if="viewMode === 'model'">
-          <el-radio-group v-model="layoutMode" size="small" @change="renderModelGraph">
+          <el-radio-group v-model="layoutMode" size="small" aria-label="布局方式切换" @change="renderModelGraph">
             <el-radio-button value="grouped">分层布局</el-radio-button>
             <el-radio-button value="force">力导向</el-radio-button>
           </el-radio-group>
@@ -1271,9 +1271,10 @@ onUnmounted(() => {
         border-color: var(--border-subtle);
         color: var(--text-secondary);
       }
+      /* 选中态白字在 --accent-blue 上仅 3.84:1（AA 需 4.5）→ 压暗填充 */
       :deep(.el-radio-button__original-radio:checked + .el-radio-button__inner) {
-        background: var(--accent-blue);
-        border-color: var(--accent-blue);
+        background: color-mix(in srgb, var(--accent-blue) 82%, #000);
+        border-color: color-mix(in srgb, var(--accent-blue) 82%, #000);
         color: #fff;
       }
     }
@@ -1353,7 +1354,8 @@ onUnmounted(() => {
 
     .legend-label {
       font-size: 12px;
-      color: var(--text-tertiary);
+      /* 3.3:1 → 次文字色 */
+      color: var(--text-secondary);
     }
 
     .legend-divider {
@@ -1560,5 +1562,20 @@ onUnmounted(() => {
       flex-shrink: 0;
     }
   }
+}
+
+/* ── 对比度修正（WCAG 1.4.3 AA ≥4.5）───────────────────────────
+   以下都是 Element Plus 组件内部文字，scoped 样式需 :deep() 才能命中。
+   注意：必须写在顶层，否则会被上一层选择器嵌套（曾在 .relation-dialog-nodes 内踩过）。 */
+
+/* 顶部提示标签「Shift + 拖拽节点可创建关系」：tertiary 3.3:1
+   （实测 DOM：el-tag 在 .page-header > .header-right 内，不在 .topology-toolbar） */
+.topology-page .page-header :deep(.el-tag__content) {
+  color: var(--text-secondary);
+}
+
+/* 云厂商筛选占位「全部云厂商」：muted 仅 2.09:1（提高优先级以压过 EP 默认） */
+.topology-page .topology-toolbar :deep(.el-select .el-select__placeholder) {
+  color: var(--text-secondary);
 }
 </style>
