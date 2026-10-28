@@ -204,7 +204,8 @@ export interface UpsertBatchInstanceReq {
 /** 实例视图对象 */
 export interface InstanceVO {
     id: number
-    uid: string
+    /** 模型 UID（后端 InstanceVO 字段名为 model_uid） */
+    model_uid: string
     asset_id: string
     asset_name?: string
     tenant_id: string
