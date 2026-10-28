@@ -29,12 +29,9 @@
       <el-input v-model="form.asset_name" placeholder="资产名称" />
     </el-form-item>
 
-    <el-form-item label="租户ID" prop="tenant_id">
-      <el-input
-        v-model="form.tenant_id"
-        placeholder="租户ID"
-        :disabled="isEdit"
-      />
+    <!-- 租户由登录会话决定，新建时不由用户填写；仅在编辑既有实例时只读展示 -->
+    <el-form-item v-if="props.isEdit" label="租户ID" prop="tenant_id">
+      <el-input v-model="form.tenant_id" disabled />
     </el-form-item>
 
     <el-form-item label="云账号ID" prop="account_id">
@@ -93,7 +90,6 @@ const attributeList = ref<{ key: string; value: string }[]>([])
 const rules: FormRules = {
   uid: [{ required: true, message: '请选择模型', trigger: 'change' }],
   asset_id: [{ required: true, message: '请输入资产ID', trigger: 'blur' }],
-  tenant_id: [{ required: true, message: '请输入租户ID', trigger: 'blur' }],
 }
 
 // 监听实例变化，填充表单
@@ -183,11 +179,12 @@ const submit = async () => {
       attributes: Object.keys(attributes).length > 0 ? attributes : undefined,
     })
   } else {
+    // 后端 CreateInstanceReq 字段名为 model_uid（必填）；租户由会话 claims 决定，
+    // 不接受前端传 tenant_id（传入也会被忽略，属冗余字段）。
     await createCmdbInstanceApi({
-      uid: form.uid,
+      model_uid: form.uid,
       asset_id: form.asset_id,
       asset_name: form.asset_name || undefined,
-      tenant_id: form.tenant_id,
       account_id: form.account_id,
       attributes: Object.keys(attributes).length > 0 ? attributes : undefined,
     })
