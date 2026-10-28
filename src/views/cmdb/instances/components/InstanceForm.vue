@@ -146,8 +146,24 @@ const buildAttributes = () => {
   return attrs
 }
 
+/**
+ * 表单校验，返回是否通过。
+ *
+ * Element Plus 的 validate() 校验失败时抛异常而非返回 false，
+ * 父组件 handleSubmit 依赖布尔结果（`if (!valid) return`），
+ * 故在此收敛为 boolean，避免异常穿透导致点击确定后无任何反馈。
+ */
+const validate = async (): Promise<boolean> => {
+  try {
+    await formRef.value?.validate()
+    return true
+  } catch {
+    return false
+  }
+}
+
 const submit = async () => {
-  await formRef.value?.validate()
+  if (!(await validate())) return
 
   const attributes = buildAttributes()
 
@@ -178,7 +194,7 @@ const reset = () => {
   formRef.value?.resetFields()
 }
 
-defineExpose({ submit, reset })
+defineExpose({ submit, reset, validate })
 </script>
 
 <style scoped lang="scss">
