@@ -1,5 +1,7 @@
 <template>
   <div class="topology-page">
+    <!-- 读屏播报：页面里只有视觉上的「实时/加载中/未加载」指示器，不是 live region，读屏听不到 -->
+    <LiveStatus :text="liveStatusText" />
     <!-- 顶部工具栏 -->
     <div class="topology-toolbar">
       <div class="toolbar-left">
@@ -85,6 +87,16 @@ const statusText = computed(() => {
     case 'loading': return '加载中'
     case 'error': return '异常'
     default: return '未加载'
+  }
+})
+
+// 读屏播报文案：与视觉徽章同一状态源（徽章不是 live region，读屏不会自动念）
+const liveStatusText = computed(() => {
+  switch (store.dataStatus) {
+    case 'loading': return '正在加载链路拓扑…'
+    case 'error': return '链路拓扑加载失败'
+    case 'live': return '链路拓扑已加载'
+    default: return '链路拓扑尚未加载'
   }
 })
 

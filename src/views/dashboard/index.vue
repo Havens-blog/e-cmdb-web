@@ -54,6 +54,8 @@ onMounted(load)
 
 <template>
   <div class="dashboard" v-loading="loading">
+    <!-- 读屏加载播报（v-loading 无 live region） -->
+    <LiveStatus :text="loading ? '正在加载概览数据…' : '概览数据已加载'" />
     <div class="page-head">
       <h1 class="page-title">仪表盘</h1>
       <p class="page-subtitle">配置数据平台 · 单一事实源</p>
