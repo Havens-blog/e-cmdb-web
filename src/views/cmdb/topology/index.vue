@@ -57,7 +57,7 @@
               <el-option
                 v-for="inst in instanceOptions"
                 :key="inst.id"
-                :label="`${inst.asset_name || inst.asset_id} (${inst.uid})`"
+                :label="`${inst.asset_name || inst.asset_id} (${inst.model_uid})`"
                 :value="inst.id"
               />
             </el-select>

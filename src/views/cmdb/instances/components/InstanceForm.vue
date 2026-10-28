@@ -107,7 +107,7 @@ watch(
   () => props.instance,
   (val) => {
     if (val) {
-      form.uid = val.uid
+      form.uid = val.model_uid
       form.asset_id = val.asset_id
       form.asset_name = val.asset_name || ''
       form.tenant_id = val.tenant_id

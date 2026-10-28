@@ -127,8 +127,8 @@
           <template #default="{ row }">
             <!-- 资产类型 -->
             <template v-if="col.key === 'asset_type'">
-              <el-tag size="small" :type="safeTagType(getAssetTypeTagType(row.uid))">
-                {{ getAssetTypeLabel(row.uid) }}
+              <el-tag size="small" :type="safeTagType(getAssetTypeTagType(row.model_uid))">
+                {{ getAssetTypeLabel(row.model_uid) }}
               </el-tag>
             </template>
             <!-- 云平台 -->
@@ -431,7 +431,7 @@ const buildListParams = (page: number, size: number): Record<string, any> => {
     limit: size,
   }
   if (filters.keyword) params.keyword = filters.keyword
-  if (filters.asset_type) params.uid = filters.asset_type
+  if (filters.asset_type) params.model_uid = filters.asset_type
   if (filters.provider) params.provider = filters.provider
   if (filters.region) params.region = filters.region
   // H-02：模型→实例下钻，后端 instance_handler List 按 model_uid 过滤（独立参数，不混入 keyword）
@@ -503,7 +503,7 @@ const exportConfig: ExportFieldConfig<InstanceVO> = {
       return instance[key] || ''
     }
     if (key === 'uid') {
-      const type = instance.uid?.split('_')[0] || instance.uid
+      const type = instance.model_uid?.split('_')[0] || instance.model_uid
       const typeMap: Record<string, string> = {
         ecs: '云服务器', rds: 'RDS', redis: 'Redis', mongodb: 'MongoDB',
         vpc: 'VPC', eip: '弹性公网IP', nas: '文件存储', oss: '对象存储',
@@ -582,7 +582,7 @@ const handleRowClick = (row: InstanceVO) => {
 
 // 查看详情 - 跳转到对应类型的详情页
 const handleViewDetail = (row: InstanceVO) => {
-  const assetType = row.uid?.split('_')[0] || row.uid
+  const assetType = row.model_uid?.split('_')[0] || row.model_uid
   const routeInfo = assetTypeRouteMap[assetType]
   
   if (routeInfo) {
