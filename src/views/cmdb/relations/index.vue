@@ -1,7 +1,7 @@
 <template>
   <div class="relations-page">
     <!-- 读屏加载/结果播报（v-loading 无 live region） -->
-    <LiveStatus :text="loading ? '正在加载模型关系…' : `共 ${relations.length} 条模型关系`" />
+    <LiveStatus :text="loading ? '正在加载模型关系…' : (loadError || `共 ${relations.length} 条模型关系`)" />
     <!-- 页面头部 -->
     <div class="page-header">
       <div class="header-content">
@@ -188,8 +188,20 @@
         </div>
       </TransitionGroup>
 
+      <!-- 错误态：优先于空态，避免把服务端错误显示成「没有数据，去创建」 -->
+      <div v-if="!loading && loadError" class="empty-state" role="alert">
+        <div class="empty-icon">
+          <el-icon :size="48"><WarningFilled /></el-icon>
+        </div>
+        <div class="empty-title">{{ loadError }}</div>
+        <div class="empty-desc">请稍后重试；若持续失败请联系管理员</div>
+        <div class="empty-actions">
+          <el-button @click="fetchRelations">重试</el-button>
+        </div>
+      </div>
+
       <!-- 空状态 -->
-      <div v-if="!loading && relations.length === 0" class="empty-state">
+      <div v-else-if="!loading && relations.length === 0" class="empty-state">
         <div class="empty-icon">
           <el-icon :size="48"><Connection /></el-icon>
         </div>
@@ -280,7 +292,8 @@ import {
   RefreshLeft,
   Search,
   SetUp,
-  Share
+  Share,
+  WarningFilled
 } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, reactive, ref } from 'vue'
@@ -288,6 +301,8 @@ import RelationDetailDrawer from './components/RelationDetailDrawer.vue'
 import RelationForm from './components/RelationForm.vue'
 
 const loading = ref(false)
+/** 加载失败原因；非空时显示错误态（带重试），不再落到「暂无模型关系」空态 */
+const loadError = ref<string | null>(null)
 const submitting = ref(false)
 const dialogVisible = ref(false)
 const isEdit = ref(false)
@@ -391,6 +406,7 @@ const fetchModels = async () => {
 
 const fetchRelations = async () => {
   loading.value = true
+  loadError.value = null
   try {
     const params = {
       source_model_uid: filters.source_model_uid || undefined,
@@ -404,6 +420,8 @@ const fetchRelations = async () => {
     pagination.total = data?.data?.total || data?.total || 0
   } catch (error) {
     console.error('获取关系列表失败:', error)
+    // 记录失败：否则 loading=false + 列表为空 会掉进「暂无模型关系，去创建」空态，误导用户
+    loadError.value = '模型关系加载失败'
     ElMessage.error('获取关系列表失败')
     relations.value = []
     pagination.total = 0
