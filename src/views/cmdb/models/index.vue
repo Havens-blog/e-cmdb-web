@@ -142,8 +142,16 @@
             </div>
           </div>
 
+          <!-- 错误态：优先于空态，避免把服务端错误显示成「没有数据，去创建」 -->
+          <div v-if="!loading && loadError" class="empty-state" role="alert">
+            <div class="empty-icon"><el-icon :size="48"><WarningFilled /></el-icon></div>
+            <div class="empty-title">{{ loadError }}</div>
+            <div class="empty-desc">请稍后重试；若持续失败请联系管理员</div>
+            <el-button class="empty-retry" size="small" @click="fetchGroupsWithModels">重试</el-button>
+          </div>
+
           <!-- 空状态 -->
-          <div v-if="!loading && filteredModels.length === 0" class="empty-state">
+          <div v-else-if="!loading && filteredModels.length === 0" class="empty-state">
             <div class="empty-icon"><el-icon :size="48"><Grid /></el-icon></div>
             <div class="empty-title">{{ searchKeyword ? '没有匹配的模型' : '暂无模型' }}</div>
             <div class="empty-desc">{{ searchKeyword ? '尝试其他关键词' : '点击右上角按钮创建模型' }}</div>
@@ -202,7 +210,8 @@ import {
 import type { ModelGroupWithModelsVO, ModelVO } from '@/api/types/cmdb'
 import { getProviderLabel as getProviderLabelShared } from '@/utils/constants'
 import {
-  Coin, Connection, Delete, Edit, Folder, FolderAdd, Grid, List, Monitor, MoreFilled, Plus, Search
+  Coin, Connection, Delete, Edit, Folder, FolderAdd, Grid, List, Monitor, MoreFilled, Plus, Search,
+  WarningFilled
 } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import { computed, onMounted, reactive, ref } from 'vue'
@@ -217,6 +226,8 @@ const router = useRouter()
 const loading = ref(false)
 const groupLoading = ref(false)
 const submitting = ref(false)
+/** 加载失败原因；非空时页面显示错误态（带重试），不再落到「暂无模型」空态 */
+const loadError = ref<string | null>(null)
 const groups = ref<ModelGroupWithModelsVO[]>([])
 const selectedGroupId = ref<number | null>(null)
 const searchKeyword = ref('')
@@ -276,9 +287,11 @@ const filteredModels = computed(() => {
   )
 })
 
-// 供读屏播报的状态文案：加载中 / 加载完成（含条数）。v-loading 只是视觉遮罩，读屏感知不到。
+// 供读屏播报的状态文案：加载中 / 失败 / 加载完成（含条数）。v-loading 只是视觉遮罩，读屏感知不到。
 const liveStatusText = computed(() => {
   if (loading.value || groupLoading.value) return '正在加载资源模型…'
+  // 失败优先：否则会说「没有匹配的资源模型」，与页面的错误态自相矛盾
+  if (loadError.value) return loadError.value
   const total = filteredModels.value.length
   if (total === 0) return '没有匹配的资源模型'
   return `共 ${total} 个资源模型`
@@ -311,6 +324,7 @@ const isImageUrl = (v: string) => {
 const fetchGroupsWithModels = async () => {
   groupLoading.value = true
   loading.value = true
+  loadError.value = null
   try {
     const response = await listModelGroupsWithModelsApi()
     const data = response.data as any
@@ -318,6 +332,9 @@ const fetchGroupsWithModels = async () => {
     console.log('分组数据:', groups.value.map(g => ({ uid: g.uid, name: g.name, id: g.id })))
   } catch (error) {
     console.error('获取分组失败:', error)
+    // 记录失败：否则 loading=false + 列表为空 会掉进「暂无模型」空态，
+    // 把服务端错误显示成「没有数据，去创建」，误导用户（实测 500 时就是这样）。
+    loadError.value = '资源模型加载失败'
     ElMessage.error('获取分组失败')
   } finally {
     groupLoading.value = false
