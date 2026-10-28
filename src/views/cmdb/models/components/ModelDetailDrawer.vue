@@ -209,11 +209,15 @@ import {
   type FormRules
 } from 'element-plus'
 import { reactive, ref, watch } from 'vue'
+import { useModalIsolation } from '@/composables/useModalIsolation'
 
 const props = defineProps<{
   visible: boolean
   model: ModelVO | null
 }>()
+
+// EP 抽屉自带焦点陷阱与 Esc，但不会隔离背景、也不会归还焦点（关闭后落回 <body>）
+useModalIsolation(() => props.visible)
 
 const emit = defineEmits<{
   'update:visible': [value: boolean]

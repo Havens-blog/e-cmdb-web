@@ -256,12 +256,16 @@ import { getProviderLabel } from '@/utils/constants';
 import { CHARGE_TYPE_LABELS, ECS_STATUS_LABELS, labelOfLenient } from '@/utils/fieldLabels';
 import { ArrowDown, Close, Document, Refresh } from '@element-plus/icons-vue';
 import { ref } from 'vue';
+import { useModalIsolation } from '@/composables/useModalIsolation';
 import { getProviderIcon } from '@/utils/icon-mapping'
 
-defineProps<{
+const props = defineProps<{
   visible: boolean
   instance: InstanceVO | null
 }>()
+
+// EP 抽屉自带焦点陷阱与 Esc，但不会隔离背景、也不会归还焦点（关闭后落回 <body>）
+useModalIsolation(() => props.visible)
 
 defineEmits<{
   'update:visible': [value: boolean]
