@@ -26,7 +26,8 @@
           <el-icon><FullScreen /></el-icon>
         </el-button>
         <el-divider direction="vertical" />
-        <el-radio-group v-model="store.layoutMode" size="small">
+        <!-- 需显式命名：否则 Element Plus 会注入默认英文 aria-label="radio-group" -->
+        <el-radio-group v-model="store.layoutMode" size="small" aria-label="布局方式切换">
           <el-radio-button value="dag">DAG分层</el-radio-button>
           <el-radio-button value="force">力导向</el-radio-button>
         </el-radio-group>
