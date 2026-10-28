@@ -119,7 +119,8 @@ function isActive(path: string): boolean {
             <!-- 品牌色渐变分割线（WatchAlert 金色分割线同构） -->
             <div class="shell-divider" role="presentation"></div>
 
-            <nav class="sidebar-nav">
+            <!-- 主目录导航：需显式命名，否则读屏只报「导航」无法与其他 nav 区分 -->
+            <nav class="sidebar-nav" aria-label="主目录">
                 <div v-for="group in menuGroups" :key="group.title" class="menu-group">
                     <div v-if="!appStore.sidebarCollapsed" class="menu-group-title">{{ group.title }}</div>
                     <router-link
