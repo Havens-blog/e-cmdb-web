@@ -707,7 +707,8 @@ onMounted(() => {
 }
 
 .name-link {
-  color: var(--el-color-primary);
+  /* --el-color-primary(#5e6ad2) 在深色底上仅 4.05:1（AA 需 4.5）→ 与白混 65% 提亮，保留色相 */
+  color: color-mix(in srgb, var(--el-color-primary) 65%, #fff);
   cursor: pointer;
   
   &:hover {
@@ -740,7 +741,8 @@ onMounted(() => {
   
   &.status-stopped {
     background: rgba(144, 147, 153, 0.1);
-    color: var(--text-tertiary);
+    /* tertiary 在淡灰底上仅 2.9:1（AA 需 4.5）→ 次文字色 */
+    color: var(--text-secondary);
   }
   
   &.status-pending {
@@ -755,7 +757,8 @@ onMounted(() => {
   
   &.status-default {
     background: rgba(144, 147, 153, 0.1);
-    color: var(--text-tertiary);
+    /* tertiary 在淡灰底上仅 2.9:1（AA 需 4.5）→ 次文字色 */
+    color: var(--text-secondary);
   }
 }
 
@@ -768,5 +771,24 @@ onMounted(() => {
   padding: 16px;
   display: flex;
   justify-content: flex-end;
+
+  /* 分页当前页：白字在 --el-color-primary 上仅 3.84:1 → 压暗填充 */
+  :deep(.el-pager li.is-active) {
+    background: color-mix(in srgb, var(--el-color-primary) 82%, #000);
+  }
+}
+
+/* 行内「查看」是 el-button--primary 的 link 形态：文字取 --el-color-primary 仅 4.05:1
+   （放在顶层，因为按钮在表格单元格里，不在 .pagination-container 内） */
+:deep(.el-button--primary.is-link),
+:deep(.el-button--primary.is-text) {
+  color: color-mix(in srgb, var(--el-color-primary) 65%, #fff);
+}
+
+/* 筛选区 el-select 的占位「资产类型」：muted 仅 2.09:1
+   （需连 .is-transparent 一起写：EP 的 `.el-select__placeholder.is-transparent` 与本规则同优先级，
+     且 EP 样式后加载，会覆盖；提高特异性才能稳定生效） */
+.filters :deep(.el-select .el-select__placeholder.is-transparent) {
+  color: var(--text-secondary);
 }
 </style>
