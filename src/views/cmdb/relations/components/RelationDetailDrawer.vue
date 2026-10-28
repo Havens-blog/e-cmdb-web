@@ -98,11 +98,15 @@
 <script setup lang="ts">
 import type { ModelRelationVO } from '@/api/types/cmdb';
 import { Connection, Delete, Edit } from '@element-plus/icons-vue';
+import { useModalIsolation } from '@/composables/useModalIsolation';
 
-defineProps<{
+const props = defineProps<{
   visible: boolean
   relation: ModelRelationVO | null
 }>()
+
+// EP 抽屉自带焦点陷阱与 Esc，但不会隔离背景、也不会归还焦点（关闭后落回 <body>）
+useModalIsolation(() => props.visible)
 
 defineEmits<{
   'update:visible': [value: boolean]
