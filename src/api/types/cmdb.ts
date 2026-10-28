@@ -167,10 +167,10 @@ export interface ModelGroupResp {
 
 /** 创建实例请求 */
 export interface CreateInstanceReq {
-    uid: string
+    /** 模型 UID（后端字段名 model_uid，必填） */
+    model_uid: string
     asset_id: string
     asset_name?: string
-    tenant_id: string
     account_id?: number
     attributes?: Record<string, any>
 }
