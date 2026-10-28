@@ -97,6 +97,16 @@ const rules: FormRules = {
 }
 
 // 监听实例变化，填充表单
+const reset = () => {
+  form.uid = ''
+  form.asset_id = ''
+  form.asset_name = ''
+  form.tenant_id = ''
+  form.account_id = undefined
+  attributeList.value = []
+  formRef.value?.resetFields()
+}
+
 watch(
   () => props.instance,
   (val) => {
@@ -182,16 +192,6 @@ const submit = async () => {
       attributes: Object.keys(attributes).length > 0 ? attributes : undefined,
     })
   }
-}
-
-const reset = () => {
-  form.uid = ''
-  form.asset_id = ''
-  form.asset_name = ''
-  form.tenant_id = ''
-  form.account_id = undefined
-  attributeList.value = []
-  formRef.value?.resetFields()
 }
 
 defineExpose({ submit, reset, validate })
