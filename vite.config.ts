@@ -94,6 +94,10 @@ export default defineConfig(({ mode }) => {
           target: 'http://localhost:8001',
           changeOrigin: true,
         },
+        '/api/v1/certs': {
+          target: 'http://localhost:8001',
+          changeOrigin: true,
+        },
         '/api/iam': {
           target: 'http://localhost:9000',
           changeOrigin: true,

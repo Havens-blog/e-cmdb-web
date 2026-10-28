@@ -1,6 +1,6 @@
 /**
- * 变更审计 API（编排层：转发 e-cam-service /api/v1/cam/audit/changes）
- * 端点：/api/v1/cmdb/audit/*
+ * 变更审计 API（直连 e-cam-service /api/v1/cam/audit/changes）
+ * 端点：/api/v1/cam/audit/*
  */
 import instance from './request/service'
 
@@ -48,7 +48,7 @@ export function listChangesApi(params: {
     offset?: number
     limit?: number
 }) {
-    return instance.get<ChangeList>({ url: '/cmdb/audit/changes', params })
+    return instance.get<ChangeList>({ url: '/cam/audit/changes', params })
 }
 
 /** 获取变更统计汇总 */
@@ -58,5 +58,5 @@ export function getChangeSummaryApi(params: {
     start_time?: number
     end_time?: number
 }) {
-    return instance.get<ChangeSummary>({ url: '/cmdb/audit/changes/summary', params })
+    return instance.get<ChangeSummary>({ url: '/cam/audit/changes/summary', params })
 }

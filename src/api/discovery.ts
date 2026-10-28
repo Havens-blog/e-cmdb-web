@@ -1,27 +1,33 @@
-﻿/**
- * 澶氫簯鍙戠幇 API锛堢紪鎺掑眰锛氳浆鍙?e-cam-service /api/v1/certs/discovery/*锛? * 绔偣锛?api/v1/cmdb/discovery/*
+/**
+ * Multi-cloud certificate discovery API.
+ * Direct integration with e-cam-service /api/v1/certs/discovery/*.
  *
- * 涓婃父 cert 妯″潡鐨?{success,data} 淇″皝宸茬敱缂栨帓灞傚綊涓€涓?{code,msg,data}銆? */
-import instance from './request/service'
+ * The upstream cert envelope is { success, data }. The dedicated cert axios
+ * instance (./request/cert) unwraps success responses to `data`; here we re-wrap
+ * into the { code, data, message } shape so views/discovery keeps its existing
+ * `resp.data` access unchanged.
+ */
+import type { ResponseData } from './request/types'
+import { cert } from './request/cert'
 
-// ==================== 绫诲瀷锛堝榻?e-cam cert/web VO锛?====================
+// ==================== Types (aligned with e-cam cert/web VO) ====================
 
-/** 鍙戠幇棰勮鏉＄洰锛坈loud+accountKey+cloudCertId 涓夊厓缁勫幓閲嶏級 */
+/** Preview entry (deduped by cloud + accountKey + cloudCertId) */
 export interface DiscoveryPreviewEntry {
     cloud: string
     accountKey: string
     cloudCertId: string
-    /** 鍙鍚嶏紙寮曠敤 resourceId 閲囨牱锛歝as=璇佷功鍚嶃€乧dn/waf=鍩熷悕锛夛紱绌?寮曠敤鏈甫 */
+    /** Readable name (resourceId sample: cas=cert name, cdn/waf=domain); empty when not referenced */
     label: string
-    /** 蹇収鍐呰涓夊厓缁勭殑寮曠敤璧勬簮鏁?*/
+    /** Reference resource count for this tuple within the snapshot */
     refCount: number
-    /** 鏄惁宸插湪璇佷功鍙拌处锛坱rue=宸插鍏ワ級 */
+    /** Whether already imported into the cert ledger */
     inLedger: boolean
-    /** 鍙拌处鍒版湡鏃堕棿 RFC3339锛涙湭鐧昏涓哄崰浣嶆枃妗?*/
+    /** Ledger expiry RFC3339; placeholder for unregistered */
     notAfter: string
-    /** false=涓嶅彲閫夌粍锛堝崕涓轰簯/AWS IAM-hosted锛?*/
+    /** false = not selectable (Huawei/AWS IAM-hosted) */
     parseable: boolean
-    /** deferred_parse / unsupported_cloud / iam_hosted锛涘父鎬佺┖ */
+    /** deferred_parse / unsupported_cloud / iam_hosted; usually empty */
     parseReason: string
 }
 
@@ -40,7 +46,7 @@ export interface SnapshotChannelFailure {
 export interface DiscoverySnapshotStatus {
     hasSnapshot: boolean
     snapshotId?: string
-    /** running / done / failed锛涢浂蹇収涓虹┖ */
+    /** running / done / failed; empty for zero snapshots */
     status?: string
     startedAt?: string
     failReason?: string
@@ -67,29 +73,35 @@ export interface DiscoveryImportSession {
     finishedAt?: string
 }
 
-// ==================== 鍑芥暟 ====================
+// ==================== Helpers ====================
 
-/** 鍙戠幇棰勮锛堟棤 done 蹇収鏃朵笂娓?409 NO_SNAPSHOT锛屼俊灏?code=409锛?*/
+function toResponse<T>(promise: Promise<T>): Promise<ResponseData<T>> {
+    return promise.then((data) => ({ code: 0, data, message: '' }))
+}
+
+// ==================== Functions ====================
+
+/** Discovery preview (upstream 409 NO_SNAPSHOT when no done snapshot exists) */
 export function getDiscoveryPreviewApi() {
-    return instance.get<DiscoveryPreview>({ url: '/cmdb/discovery/preview' })
+    return toResponse(cert.get<DiscoveryPreview>('/certs/discovery/preview'))
 }
 
-/** 鏈€杩戝揩鐓х姸鎬侊紙闆跺揩鐓т负 hasSnapshot=false 绌烘€侊級 */
+/** Latest snapshot status (zero snapshots => hasSnapshot=false empty state) */
 export function getSnapshotStatusApi() {
-    return instance.get<DiscoverySnapshotStatus>({ url: '/cmdb/discovery/snapshot-status' })
+    return toResponse(cert.get<DiscoverySnapshotStatus>('/certs/discovery/snapshot-status'))
 }
 
-/** 鍕鹃€夋潯鐩垱寤哄鍏ヤ細璇濓紙涓婃父 202锛岃繑鍥?pending 鍒濆蹇収锛?*/
+/** Create an import session from selected entries (upstream 202, returns pending initial snapshot) */
 export function createDiscoveryImportApi(items: DiscoveryImportItem[]) {
-    return instance.post<DiscoveryImportSession>({ url: '/cmdb/discovery/import', data: { items } })
+    return toResponse(cert.post<DiscoveryImportSession>('/certs/discovery/import', { items }))
 }
 
-/** 瀵煎叆浼氳瘽杩涘害杞锛堢粓鎬?completed/partial_failed 鐢?status/finishedAt 鍒ゅ畾锛?*/
+/** Poll import session progress (terminal status decided by status/finishedAt) */
 export function getImportSessionApi(sessionId: string) {
-    return instance.get<DiscoveryImportSession>({ url: `/cmdb/discovery/import/${sessionId}` })
+    return toResponse(cert.get<DiscoveryImportSession>(`/certs/discovery/import/${sessionId}`))
 }
 
-/** 鎵嬪姩瑙﹀彂涓€杞浜戝閲忓悓姝ワ紙OpsEngineer 鐧藉悕鍗曪紝涓€娆℃€х粓鎬佹憳瑕侊級 */
+/** Manually trigger one round of multi-cloud incremental sync (OpsEngineer allowlist, one-shot terminal summary) */
 export function triggerDiscoverySyncApi() {
-    return instance.post<Record<string, unknown>>({ url: '/cmdb/discovery/sync' })
+    return toResponse(cert.post<Record<string, unknown>>('/certs/discovery/sync'))
 }
