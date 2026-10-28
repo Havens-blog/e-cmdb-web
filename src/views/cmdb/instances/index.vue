@@ -466,7 +466,10 @@ const fetchInstances = async () => {
 const fetchModels = async () => {
   try {
     const res = await listCmdbModelsApi({ limit: 100 })
-    modelOptions.value = res.data?.data?.models || []
+    // 请求层已解包外层信封（res.data 即 { models, total }），与列表接口同口径做兼容取值，
+    // 原写法 res.data?.data?.models 多取一层，恒为 undefined，导致「新建实例」模型下拉为空。
+    const data = res.data?.data || res.data
+    modelOptions.value = data?.models || []
   } catch (error) {
     console.error('加载模型列表失败:', error)
     ElMessage.error('加载模型列表失败')
