@@ -253,6 +253,7 @@
 import type { InstanceVO } from '@/api/types/cmdb';
 import { IconFont } from '@haven/ui/IconFont';
 import { getProviderLabel } from '@/utils/constants';
+import { formatTimestamp } from '@/utils/time';
 import { CHARGE_TYPE_LABELS, ECS_STATUS_LABELS, labelOfLenient } from '@/utils/fieldLabels';
 import { ArrowDown, Close, Document, Refresh } from '@element-plus/icons-vue';
 import { ref } from 'vue';
@@ -329,10 +330,8 @@ const formatDateTime = (dateStr: string | undefined): string => {
   }
 }
 
-const formatTime = (time: number | undefined) => {
-  if (!time) return '-'
-  return new Date(time).toLocaleString('zh-CN')
-}
+// 统一走共享格式化（补零 + 时分）；原实现 toLocaleString('zh-CN') 不补零且带秒，与列表页不一致
+const formatTime = (time: number | undefined) => formatTimestamp(time)
 
 const formatMemory = (memory: number | undefined) => {
   if (!memory) return '-'

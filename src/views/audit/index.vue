@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { listChangesApi, getChangeSummaryApi, type ChangeRecord, type ChangeSummary } from '@/api/audit'
+import { formatTimestamp } from '@/utils/time'
 import { Search, Timer, RefreshRight } from '@element-plus/icons-vue'
 
 const loading = ref(false)
@@ -72,9 +73,11 @@ function fmtValue(raw?: string): string {
     }
 }
 
+// 统一走共享格式化（补零 + 时分），与其它页口径一致；
+// 原实现 toLocaleString() 依赖运行环境 locale，输出形如 "2026/1/20 17:01:00"（不补零、带秒），
+// 且空值占位是 '—'，与其它页的 '-' 不一致。
 function fmtTime(ms?: number): string {
-    if (!ms) return '—'
-    return new Date(ms).toLocaleString()
+    return formatTimestamp(ms)
 }
 
 const truncate = (s: string, n = 42) => (s.length > n ? s.slice(0, n) + '…' : s)
