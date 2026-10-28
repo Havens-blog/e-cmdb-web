@@ -116,7 +116,8 @@ onUnmounted(() => {
 .stats-bar strong { color: var(--text-primary); font-size: 16px; }
 .broken-count { color: var(--accent-red); }
 .broken-count strong { color: var(--accent-red); }
-.empty-state { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: var(--text-tertiary); z-index: 5; }
+/* tertiary 在近黑底上只有 3.45:1（AA 需 4.5），且会被标题/描述继承 → 用次文字色 ≈6.1:1 */
+.empty-state { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: var(--text-secondary); z-index: 5; }
 .empty-title { font-size: 16px; font-weight: 600; }
 .empty-desc { font-size: 13px; }
 </style>
