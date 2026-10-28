@@ -1376,7 +1376,8 @@ onUnmounted(() => {
         background: rgba(113, 112, 255, 0.15);
 
         .node-label {
-          color: var(--accent-blue);
+          /* 选中项品牌紫在 15% 淡染底上仅 3.92:1（AA 需 4.5）→ 与白混到 65% 提亮，保留色相 */
+          color: color-mix(in srgb, var(--accent-blue) 65%, #fff);
           font-weight: 500;
         }
 
@@ -1413,7 +1414,8 @@ onUnmounted(() => {
 
       .node-breadcrumb {
         font-size: 13px;
-        color: var(--text-tertiary);
+        /* tertiary 在深色底上仅 3.11:1（AA 需 4.5）→ 次文字色 */
+        color: var(--text-secondary);
         margin-bottom: 8px;
 
         .separator {
@@ -1439,7 +1441,8 @@ onUnmounted(() => {
           font-size: 13px;
 
           .meta-label {
-            color: var(--text-tertiary);
+            /* 3.11:1 → 次文字色 */
+            color: var(--text-secondary);
             margin-right: 4px;
           }
 
@@ -1617,7 +1620,8 @@ onUnmounted(() => {
             background: rgba(113, 112, 255, 0.12);
 
             .stat-num {
-              color: var(--accent-blue);
+              /* 品牌紫在淡染底上仅 4.07:1（AA 需 4.5）→ 与白混到 65% 提亮 */
+              color: color-mix(in srgb, var(--accent-blue) 65%, #fff);
             }
           }
 
@@ -1629,7 +1633,8 @@ onUnmounted(() => {
 
           .stat-label {
             font-size: 11px;
-            color: var(--text-tertiary);
+            /* tertiary 在卡片底上仅 2.71:1 → 次文字色 */
+            color: var(--text-secondary);
             margin-top: 2px;
           }
         }
@@ -1708,5 +1713,52 @@ onUnmounted(() => {
       margin: 6px 0;
     }
   }
+}
+
+/* ── 对比度修正（WCAG 1.4.3 AA ≥4.5:1，实测值见 PR 描述）─────────────────────
+   这几个是 Element Plus 组件内部的文字，需用 :deep() 覆盖。 */
+
+/* 「删除节点」为填充型危险按钮：白字在 #ef4444 上仅 3.76:1 → 压暗填充（≈5.3:1）
+   注意：必须限定在 .action-bar 内。表格行里的「解绑」是「透明底 + 红字」的文字按钮（本就 5.58:1 达标），
+   若用 .detail-panel 泛匹配会把它们也刷成红底，造成「红字压红底 1.41:1」的回退。 */
+.action-bar :deep(.el-button--danger) {
+  background: color-mix(in srgb, var(--color-danger) 82%, #000);
+  border-color: color-mix(in srgb, var(--color-danger) 82%, #000);
+}
+
+/* 树节点计数 el-tag--primary：文字取 $accent-primary(#5e6ad2)，在深底上 3.39:1 */
+.el-tree :deep(.el-tag--primary) {
+  color: color-mix(in srgb, var(--accent-blue) 65%, #fff);
+}
+
+/* 「含子节点」开关标签：品牌紫 3.81:1 */
+.asset-filters :deep(.el-switch__label.is-active) {
+  color: color-mix(in srgb, var(--accent-blue) 65%, #fff);
+}
+
+/* 类型筛选占位「全部类型」：--text-muted 在深底上仅 2.16:1 */
+.asset-filters :deep(.el-select__placeholder) {
+  color: var(--text-secondary);
+}
+
+/* 统计卡：数字用品牌紫仅 4.07、标签用 tertiary 仅 2.71 */
+.asset-stats-row :deep(.stat-num) {
+  color: color-mix(in srgb, var(--accent-blue) 65%, #fff);
+}
+.asset-stats-row :deep(.stat-label) {
+  color: var(--text-secondary);
+}
+
+/* 分页当前页：白字在 #7070FF 上仅 3.84:1 → 压暗填充 */
+.asset-pagination :deep(.el-pager li.is-active) {
+  background: color-mix(in srgb, var(--accent-blue) 82%, #000);
+}
+
+/* el-tag--success 在深色主题下仍是浅底深字（rgb(240,249,235) 底 / rgb(39,166,68) 字 = 2.94:1），
+   与深色界面也不协调 → 改为深色主题下的绿字 + 淡绿底 */
+.el-table :deep(.el-tag--success) {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: color-mix(in srgb, var(--accent-green) 65%, #fff);
 }
 </style>
