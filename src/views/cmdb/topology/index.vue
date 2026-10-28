@@ -2,7 +2,7 @@
   <PageContainer>
     <div class="topology-page">
       <!-- 读屏加载播报（v-loading 无 live region） -->
-      <LiveStatus :text="loading ? '正在加载链路拓扑…' : '链路拓扑已加载'" />
+      <LiveStatus :text="loading ? '正在加载链路拓扑…' : (loadError ? '链路拓扑加载失败' : '链路拓扑已加载')" />
       <!-- 页面头部 -->
       <div class="page-header">
         <div class="header-left">
@@ -121,10 +121,12 @@
 
       <!-- 图表容器 -->
       <div class="topology-canvas-wrapper" v-loading="loading">
-        <div v-if="showEmpty" class="empty-state">
+        <!-- 加载失败时用 alert 语义；正常空态则不是告警 -->
+        <div v-if="showEmpty" class="empty-state" :role="loadError ? 'alert' : undefined">
           <el-icon :size="48" color="var(--text-muted)"><Share /></el-icon>
           <div class="empty-title">{{ emptyTitle }}</div>
           <div class="empty-desc">{{ emptyDesc }}</div>
+          <el-button v-if="loadError" size="small" @click="viewMode === 'model' ? fetchModelTopology() : fetchInstanceTopology()">重试</el-button>
         </div>
         <div ref="chartRef" class="topology-canvas"></div>
         <!-- 拖拽连线覆盖层 -->
@@ -284,6 +286,8 @@ const categoryLegend = computed(() =>
 // ==================== 状态 ====================
 const viewMode = ref<'model' | 'instance'>('model')
 const loading = ref(false)
+/** 加载失败原因；非空时空态区显示错误文案，而不是「暂无拓扑数据」 */
+const loadError = ref<string | null>(null)
 const chartRef = ref<HTMLElement>()
 const chart = shallowRef<echarts.ECharts | null>(null)
 
@@ -596,17 +600,22 @@ const toggleCategory = (cat: string) => {
 // ==================== 空状态 ====================
 const showEmpty = computed(() => {
   if (loading.value) return false
+  // 加载失败时也要占据这块区域（由 emptyTitle/emptyDesc 给出错误文案），
+  // 否则失败会显示「暂无拓扑数据，请先创建关系」，把服务端故障说成「没数据」。
+  if (loadError.value) return true
   if (viewMode.value === 'model') return modelTopology.value.nodes.length === 0
   if (!instanceFilter.instanceId) return true
   return instanceTopology.value.nodes.length === 0
 })
 
 const emptyTitle = computed(() => {
+  if (loadError.value) return '拓扑加载失败'
   if (viewMode.value === 'instance' && !instanceFilter.instanceId) return '请选择一个实例'
   return '暂无拓扑数据'
 })
 
 const emptyDesc = computed(() => {
+  if (loadError.value) return loadError.value
   if (viewMode.value === 'instance' && !instanceFilter.instanceId) return '在上方搜索框中选择实例，查看其关联资源拓扑'
   return '请先创建模型关系或实例关系'
 })
@@ -637,6 +646,7 @@ const getNodeSymbol = (_icon?: string, category?: string) => {
 // ==================== 数据获取 ====================
 const fetchModelTopology = async () => {
   loading.value = true
+  loadError.value = null
   try {
     const res = await getModelTopologyApi(modelFilter.provider || undefined)
     const data = res.data as any
@@ -644,6 +654,8 @@ const fetchModelTopology = async () => {
     nextTick(() => renderModelGraph())
   } catch (error) {
     console.error('获取模型拓扑失败:', error)
+    // 记录失败：否则会显示「暂无拓扑数据，请先创建模型关系」，把服务端故障说成「没数据」
+    loadError.value = '请稍后重试；若持续失败请联系管理员'
     ElMessage.error('获取模型拓扑失败')
   } finally {
     loading.value = false
@@ -668,6 +680,7 @@ const searchInstances = async (query: string) => {
 const fetchInstanceTopology = async () => {
   if (!instanceFilter.instanceId) return
   loading.value = true
+  loadError.value = null
   try {
     const res = await getInstanceTopologyApi(instanceFilter.instanceId, {
       depth: instanceFilter.depth,
@@ -678,6 +691,7 @@ const fetchInstanceTopology = async () => {
     nextTick(() => renderInstanceGraph())
   } catch (error) {
     console.error('获取实例拓扑失败:', error)
+    loadError.value = '请稍后重试；若持续失败请联系管理员'
     ElMessage.error('获取实例拓扑失败')
   } finally {
     loading.value = false
