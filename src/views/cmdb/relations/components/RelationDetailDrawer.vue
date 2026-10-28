@@ -99,6 +99,7 @@
 import type { ModelRelationVO } from '@/api/types/cmdb';
 import { Connection, Delete, Edit } from '@element-plus/icons-vue';
 import { useModalIsolation } from '@/composables/useModalIsolation';
+import { formatTimestamp } from '@/utils/time';
 
 const props = defineProps<{
   visible: boolean
@@ -146,10 +147,9 @@ const getDirectionLabel = (direction: string) => {
   return map[direction] || direction || '-'
 }
 
-const formatTime = (time: number | undefined) => {
-  if (!time) return '-'
-  return new Date(time).toLocaleString('zh-CN')
-}
+// 统一走共享格式化：原实现 toLocaleString('zh-CN') 会输出 "2026/1/20 17:01:00"（不补零 + 秒），
+// 与列表页/资源实例页口径不一致
+const formatTime = (time: number | undefined) => formatTimestamp(time)
 </script>
 
 <style scoped lang="scss">

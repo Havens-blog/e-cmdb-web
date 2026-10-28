@@ -278,6 +278,7 @@
 <script setup lang="ts">
 import { deleteModelRelationApi, listCmdbModelsApi, listModelRelationsApi } from '@/api'
 import type { ModelRelationVO, ModelVO } from '@/api/types/cmdb'
+import { formatTimestamp } from '@/utils/time'
 import {
   ArrowLeft,
   ArrowRight,
@@ -388,10 +389,9 @@ const getDirectionLabel = (direction: string) => {
   return map[direction] || direction || '-'
 }
 
-const formatTime = (time: number | undefined) => {
-  if (!time) return '-'
-  return new Date(time).toLocaleDateString('zh-CN')
-}
+// 统一走共享格式化（补零 + 时分），与资源实例页口径一致；
+// 原实现用 toLocaleDateString('zh-CN') 会输出 2026/1/20（不补零、无时分），跨页不一致。
+const formatTime = (time: number | undefined) => formatTimestamp(time)
 
 const fetchModels = async () => {
   try {
