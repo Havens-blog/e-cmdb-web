@@ -1,5 +1,7 @@
 <template>
   <div class="models-page">
+    <!-- 读屏加载/结果播报（v-loading 无 live region） -->
+    <LiveStatus :text="liveStatusText" />
     <!-- 页面头部 -->
     <div class="page-header">
       <div class="header-content">
@@ -272,6 +274,14 @@ const filteredModels = computed(() => {
     m.uid.toLowerCase().includes(keyword) ||
     m.description?.toLowerCase().includes(keyword)
   )
+})
+
+// 供读屏播报的状态文案：加载中 / 加载完成（含条数）。v-loading 只是视觉遮罩，读屏感知不到。
+const liveStatusText = computed(() => {
+  if (loading.value || groupLoading.value) return '正在加载资源模型…'
+  const total = filteredModels.value.length
+  if (total === 0) return '没有匹配的资源模型'
+  return `共 ${total} 个资源模型`
 })
 
 // 辅助函数

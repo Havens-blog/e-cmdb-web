@@ -1,5 +1,7 @@
 <template>
   <div class="instances-page">
+    <!-- 读屏加载/结果播报（v-loading 无 live region） -->
+    <LiveStatus :text="loading ? '正在加载资源实例…' : `共 ${instances.length} 个资源实例`" />
     <!-- 页面头部 -->
     <ManagerHeader title="资源实例" subtitle="CMDB 资源实例管理">
       <template #stats>

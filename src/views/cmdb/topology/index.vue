@@ -1,6 +1,8 @@
 <template>
   <PageContainer>
     <div class="topology-page">
+      <!-- 读屏加载播报（v-loading 无 live region） -->
+      <LiveStatus :text="loading ? '正在加载链路拓扑…' : '链路拓扑已加载'" />
       <!-- 页面头部 -->
       <div class="page-header">
         <div class="header-left">

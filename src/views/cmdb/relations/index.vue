@@ -1,5 +1,7 @@
 <template>
   <div class="relations-page">
+    <!-- 读屏加载/结果播报（v-loading 无 live region） -->
+    <LiveStatus :text="loading ? '正在加载模型关系…' : `共 ${relations.length} 条模型关系`" />
     <!-- 页面头部 -->
     <div class="page-header">
       <div class="header-content">

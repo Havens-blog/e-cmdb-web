@@ -1,6 +1,8 @@
 <template>
   <PageContainer>
     <div class="service-tree-page">
+      <!-- 读屏加载/结果播报（v-loading 无 live region） -->
+      <LiveStatus :text="treeLoading || assetsLoading ? '正在加载服务树…' : `共 ${treeData.length} 个服务节点`" />
       <!-- 页面头部 -->
       <div class="page-header">
         <div class="header-left">
