@@ -225,7 +225,7 @@ function toggleSource(v: string) {
 .fp-header { padding: 16px 18px; border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: space-between; }
 .fp-title { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
 .fp-section { padding: 14px 18px; border-bottom: 1px solid var(--border-subtle); }
-.fp-label { font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px; }
+.fp-label { font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px; }
 .chip-group { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip { display: flex; align-items: center; gap: 5px; padding: 5px 11px; border-radius: 20px; font-size: 12px; font-weight: 500; cursor: pointer; border: 1px solid var(--border-subtle); color: var(--text-secondary); transition: all 0.2s; }
 .chip:hover { border-color: var(--border-strong); color: var(--text-primary); }
@@ -245,4 +245,16 @@ function toggleSource(v: string) {
 .legend-line.silent { border-top: 2px solid var(--text-tertiary); opacity: 0.3; }
 .legend-line.broken { border-top: 2px dashed var(--accent-red); }
 .legend-line.apm { border-top: 2px solid #6366f1; }
+
+/* 头部「重置」是 el-button link primary，取 $accent-primary(#5e6ad2) 在近黑底上仅 4.05:1（AA 需 4.5）
+   → 与白混到 65% 提亮，保留品牌色相 */
+.fp-header :deep(.el-button.is-link) {
+  color: color-mix(in srgb, var(--accent-blue) 65%, #fff);
+}
+
+/* 域名选择框的空态占位文字用的是 --text-muted(#52525b)，在深色底上仅 2.32:1 → 提到次文字色 */
+.fp-section :deep(.el-select__placeholder),
+.fp-section :deep(.el-select__selected-item.el-select__placeholder) {
+  color: var(--text-secondary);
+}
 </style>
