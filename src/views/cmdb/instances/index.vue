@@ -377,11 +377,19 @@ const handleColumnSettingsChange = (columns: ColumnConfig[]) => {
 }
 
 // 获取资产类型标签
+//
+// 修复：原实现用 `uid.split('_')[0]` 查 10 项 assetTypeRouteMap，
+// 实测 80 个模型中 70 个（88%）匹配不到，列表「资产类型」列会显示
+// 英文原文或被截断的前缀（cdn→"cdn"、snapshot→"snapshot"、
+// security_group→"security"、lb→"lb"）。
+// 现改为复用 utils/assetType 的公共解析（优先后端模型表中文名，
+// 未注册模型再回退），与导出「资产类型」列保持同一口径。
 const getAssetTypeLabel = (uid: string) => {
-  const type = uid?.split('_')[0] || uid
-  return assetTypeRouteMap[type]?.label || type || '-'
+  const label = resolveAssetTypeLabel(uid, modelOptions.value)
+  return label || '-'
 }
 
+// 标签配色仍按模型前缀推断（仅影响 el-tag 的 type，不影响文案）
 const getAssetTypeTagType = (uid: string) => {
   const type = uid?.split('_')[0] || uid
   return assetTypeRouteMap[type]?.tagType || ''
