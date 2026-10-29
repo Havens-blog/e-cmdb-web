@@ -183,10 +183,10 @@ export interface UpdateInstanceReq {
 
 /** Upsert 实例请求 */
 export interface UpsertInstanceReq {
-    uid: string
+    /** 模型 UID（后端字段名 model_uid，必填）；租户由会话决定，无 tenant_id */
+    model_uid: string
     asset_id: string
     asset_name?: string
-    tenant_id: string
     account_id?: number
     attributes?: Record<string, any>
 }
@@ -353,7 +353,8 @@ export interface CreateInstanceRelationReq {
     source_instance_id: number
     target_instance_id: number
     relation_type_uid: string
-    tenant_id: string
+    /** 租户由会话 claims 决定，后端不接受该字段（传入会被忽略） */
+    tenant_id?: string
 }
 
 /** 批量创建实例关系请求 */
@@ -554,7 +555,8 @@ export interface AttributeVO {
     field_uid: string
     field_name: string
     field_type: string
-    uid: string
+    /** 所属模型 UID（后端 AttributeVO 字段名为 model_uid） */
+    model_uid: string
     group_id?: number
     display_name?: string
     display: boolean
@@ -621,6 +623,8 @@ export interface AttributeGroupVO {
     id: number
     uid: string
     name: string
+    /** 所属模型 UID（后端 AttributeGroupVO 字段） */
+    model_uid: string
     index: number
     is_builtin: boolean
     description?: string
