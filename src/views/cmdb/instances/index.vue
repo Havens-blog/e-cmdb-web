@@ -266,19 +266,23 @@ const assetTypeRouteMap: Record<string, { label: string; icon: string; route: st
   elasticsearch: { label: 'Elasticsearch', icon: 'caise-middleware', route: '/middleware/elasticsearch', tagType: '' },
 }
 
-// 资产类型选项
-const assetTypeOptions = [
-  { label: '云服务器', value: 'ecs' },
-  { label: 'RDS', value: 'rds' },
-  { label: 'Redis', value: 'redis' },
-  { label: 'MongoDB', value: 'mongodb' },
-  { label: 'VPC', value: 'vpc' },
-  { label: '弹性公网IP', value: 'eip' },
-  { label: '文件存储', value: 'nas' },
-  { label: '对象存储', value: 'oss' },
-  { label: 'Kafka', value: 'kafka' },
-  { label: 'Elasticsearch', value: 'elasticsearch' },
-]
+// 资产类型中文名映射（仅用于展示友好名，不再是筛选选项的唯一来源）
+// 历史问题：此处原为硬编码的 10 项数组，与后端模型表（80 个）和实例实际的
+// model_uid 脱节。实测存在 10 个 model_uid（volcengine_vswitch 291 条、
+// aliyun_lb 184 条、aws_vswitch 136 条等，共约 976 条实例）不在硬编码列表内，
+// 导致用户在「资源实例」页无法通过模型下拉筛选到这些数据（虽然直接改 URL 可查）。
+const ASSET_TYPE_LABELS: Record<string, string> = {
+  ecs: '云服务器',
+  rds: 'RDS',
+  redis: 'Redis',
+  mongodb: 'MongoDB',
+  vpc: 'VPC',
+  eip: '弹性公网IP',
+  nas: '文件存储',
+  oss: '对象存储',
+  kafka: 'Kafka',
+  elasticsearch: 'Elasticsearch',
+}
 
 // 状态
 const loading = ref(false)
@@ -296,6 +300,7 @@ const instances = ref<InstanceVO[]>([])
 const modelOptions = ref<ModelVO[]>([])
 const regionOptions = ref<string[]>([])
 
+
 // 筛选条件
 const filters = reactive({
   keyword: '',
@@ -303,6 +308,26 @@ const filters = reactive({
   provider: '',
   region: '',
   model_uid: '',
+})
+
+// 资产类型下拉选项：由后端模型列表动态生成（替代原硬编码列表）。
+// 说明：模型表 80 项、实例实际出现的 model_uid 可能更多（含历史/未注册模型），
+// 两者取并集才能保证「有数据的类型都可筛选」。
+const assetTypeOptions = computed(() => {
+  const seen = new Set<string>()
+  const opts: Array<{ label: string; value: string }> = []
+  for (const m of modelOptions.value) {
+    const uid = (m as any).uid
+    if (!uid || seen.has(uid)) continue
+    seen.add(uid)
+    opts.push({ label: ASSET_TYPE_LABELS[uid] || (m as any).name || uid, value: uid })
+  }
+  // 兜底：已选中但不在模型表中的 uid（例如直接带 URL 参数进入），仍需可回显
+  if (filters.model_uid && !seen.has(filters.model_uid)) {
+    const uid = filters.model_uid
+    opts.push({ label: ASSET_TYPE_LABELS[uid] || `${uid}（未注册模型）`, value: uid })
+  }
+  return opts
 })
 
 // 分页
