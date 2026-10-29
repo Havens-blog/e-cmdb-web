@@ -39,10 +39,10 @@ export const menuGroups: MenuGroup[] = [
     {
         title: 'CMDB',
         items: [
-            { key: 'cmdb-models', path: '/cmdb/models', title: '资源模型', icon: 'icon-xianxing-wuliji' },
-            { key: 'cmdb-instances', path: '/cmdb/instances', title: '资源实例', icon: 'icon-xianxing-xuniji' },
-            { key: 'cmdb-relations', path: '/cmdb/relations', title: '模型关系', icon: 'icon-xianxing-jiaohuanji' },
-            { key: 'cmdb-topology', path: '/cmdb/topology', title: '拓扑视图', icon: 'icon-xianxing-luyouqi' },
+            { key: 'cmdb-models', path: '/models', title: '资源模型', icon: 'icon-xianxing-wuliji' },
+            { key: 'cmdb-instances', path: '/instances', title: '资源实例', icon: 'icon-xianxing-xuniji' },
+            { key: 'cmdb-relations', path: '/relations', title: '模型关系', icon: 'icon-xianxing-jiaohuanji' },
+            { key: 'cmdb-topology', path: '/models/topology', title: '拓扑视图', icon: 'icon-xianxing-luyouqi' },
         ],
     },
     {

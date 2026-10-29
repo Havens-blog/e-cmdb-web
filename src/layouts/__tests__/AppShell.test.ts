@@ -49,7 +49,7 @@ function itemByHref(wrapper: ReturnType<typeof mountShell>, path: string) {
 beforeEach(async () => {
     clearTenantId()
     router = createRouter({ history: createMemoryHistory(), routes })
-    await router.push('/cmdb/models')
+    await router.push('/models')
 })
 
 describe('AppShell 菜单渲染', () => {
@@ -80,16 +80,16 @@ describe('AppShell 菜单渲染', () => {
 
 describe('AppShell 激活态', () => {
     it('当前路由对应菜单项高亮，其余不亮', async () => {
-        await router.push('/cmdb/relations')
+        await router.push('/relations')
         const wrapper = mountShell()
         expect(itemByText(wrapper, '模型关系').classes()).toContain('active')
         expect(itemByText(wrapper, '资源模型').classes()).not.toContain('active')
     })
 
-    it('前缀匹配：/cmdb/models/extra 也高亮资源模型', async () => {
+    it('前缀匹配：/models/extra 也高亮资源模型', async () => {
         // 动态注册一个子路径路由，验证 startsWith(`${path}/`) 语义
-        router.addRoute({ path: '/cmdb/models/extra', component: { template: '<div />' } })
-        await router.push('/cmdb/models/extra')
+        router.addRoute({ path: '/models/extra', component: { template: '<div />' } })
+        await router.push('/models/extra')
         const wrapper = mountShell()
         expect(itemByText(wrapper, '资源模型').classes()).toContain('active')
     })
@@ -105,14 +105,14 @@ describe('AppShell 租户透传（与路由守卫闭环）', () => {
     it('菜单 href 携带当前 tenant_id（SPA 内切页不丢租户）', () => {
         setTenantId(5)
         const wrapper = mountShell()
-        expect(itemByText(wrapper, '资源实例').attributes('href')).toBe('/cmdb/instances?tenant_id=5')
+        expect(itemByText(wrapper, '资源实例').attributes('href')).toBe('/instances?tenant_id=5')
         expect(itemByText(wrapper, '绑定规则').attributes('href')).toBe('/service-tree/rules?tenant_id=5')
     })
 
     it('租户为 0 时不拼参数（防御：交由守卫按既有语义弹回）', () => {
         clearTenantId()
         const wrapper = mountShell()
-        expect(itemByText(wrapper, '资源实例').attributes('href')).toBe('/cmdb/instances')
+        expect(itemByText(wrapper, '资源实例').attributes('href')).toBe('/instances')
     })
 })
 
@@ -146,7 +146,7 @@ describe('AppShell 侧栏状态', () => {
         expect(wrapper.findAll('.menu-group-title')).toHaveLength(0)
         expect(wrapper.find('.menu-title').exists()).toBe(false)
         // 折叠态以 title 提示菜单名（可及性）；此时无文字，改按 href 定位
-        const modelsItem = itemByHref(wrapper, '/cmdb/models')
+        const modelsItem = itemByHref(wrapper, '/models')
         expect(modelsItem.exists()).toBe(true)
         expect(modelsItem.attributes('title')).toBe('资源模型')
         await wrapper.find('.collapse-btn').trigger('click')
