@@ -244,6 +244,7 @@ import { safeTagType, getProviderLabel as getProviderLabelRaw, getProviderLabel 
 import { fetchAllRows } from '@/utils/exportAll'
 import { formatTimestamp } from '@/utils/time'
 import { resolveAssetTypeLabel } from '@/utils/assetType'
+import { buildInstanceListParams } from '@/utils/instanceQuery'
 import { Download, Plus, Refresh, Search, Setting } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, reactive, ref } from 'vue'
@@ -458,20 +459,14 @@ const formatTags = (tags: Record<string, string> | undefined) => {
   return entries.slice(0, 3).map(([k, v]) => `${k}:${v}`).join(', ') + (entries.length > 3 ? '...' : '')
 }
 
-/** 组装列表查询参数（列表分页与导出全量拉取共用，保证筛选口径一致） */
-const buildListParams = (page: number, size: number): Record<string, any> => {
-  const params: Record<string, any> = {
-    offset: (page - 1) * size,
-    limit: size,
-  }
-  if (filters.keyword) params.keyword = filters.keyword
-  if (filters.asset_type) params.model_uid = filters.asset_type
-  if (filters.provider) params.provider = filters.provider
-  if (filters.region) params.region = filters.region
-  // H-02：模型→实例下钻，后端 instance_handler List 按 model_uid 过滤（独立参数，不混入 keyword）
-  if (filters.model_uid) params.model_uid = filters.model_uid
-  return params
-}
+/** 组装列表查询参数（列表分页与导出全量拉取共用，保证筛选口径一致）
+ *
+ * 逻辑抽到 @/utils/instanceQuery（含单测）。修复点：资产类型下拉（asset_type）
+ * 优先于 URL 带入的 model_uid —— 原实现相反，导致「带 ?model_uid=xxx 进入后
+ * 在下拉里改选类型，筛选完全不生效」（实测请求仍是旧 model_uid）。
+ */
+const buildListParams = (page: number, size: number): Record<string, any> =>
+  buildInstanceListParams(filters, page, size)
 
 // 加载数据
 const fetchInstances = async () => {
