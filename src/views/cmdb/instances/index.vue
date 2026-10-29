@@ -2,8 +2,8 @@
   <div class="instances-page">
     <!-- 读屏加载/结果播报（v-loading 无 live region） -->
     <LiveStatus :text="loading ? '正在加载资源实例…' : `共 ${pagination.total} 个资源实例`" />
-    <!-- 页面头部 -->
-    <ManagerHeader title="资源实例" subtitle="CMDB 资源实例管理">
+    <!-- 页面头部：本页没有其它 h1，主标题用 h1（此前是 h2，导致整页无 h1） -->
+    <ManagerHeader title="资源实例" subtitle="CMDB 资源实例管理" :title-level="1">
       <template #stats>
         <div class="stat-item">
           <span class="stat-label">总数</span>
