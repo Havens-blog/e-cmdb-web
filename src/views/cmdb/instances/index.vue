@@ -612,16 +612,20 @@ const handleRowClick = (row: InstanceVO) => {
 
 // 查看详情 - 跳转到对应类型的详情页
 const handleViewDetail = (row: InstanceVO) => {
+  // 路由匹配仍按模型前缀推断（e-cam-web 详情页只覆盖少数基础类型）；
+  // 但提示文案改用与列表一致的中文模型名，避免同一页面出现
+  // 「列表显示快照、点查看提示 snapshot」的不一致（实测存在）。
   const assetType = row.model_uid?.split('_')[0] || row.model_uid
   const routeInfo = assetTypeRouteMap[assetType]
-  
+
   if (routeInfo) {
     // 资产详情页在 e-cam-web（nginx /cam/ 前缀）——跨应用新窗口打开并带搜索
     // 参数定位实例；SPA 内 router.push 会命中 CMDB 的 catch-all（跳仪表盘）
     const search = encodeURIComponent(row.asset_name || row.asset_id || '')
     window.open(`/cam${routeInfo.route}?search=${search}`, '_blank')
   } else {
-    ElMessage.warning(`暂不支持查看 ${assetType} 类型的详情`)
+    const label = resolveAssetTypeLabel(row.model_uid, modelOptions.value) || assetType
+    ElMessage.warning(`暂不支持查看「${label}」类型的详情`)
   }
 }
 
