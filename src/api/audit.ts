@@ -51,12 +51,23 @@ export function listChangesApi(params: {
     return instance.get<ChangeList>({ url: '/cam/audit/changes', params })
 }
 
-/** 获取变更统计汇总 */
+/**
+ * 获取变更统计汇总
+ *
+ * 性能说明（实测 2026-10-29）：该接口在后端对 change_history 做 4 次串行全量聚合，
+ * 当前租户数据量约 540 万条，实测耗时 2s→170s 持续恶化，最终以
+ * `connection(...): socket was unexpectedly closed: EOF` 返回 500。
+ * 前端不应让它阻塞页面，故单独设置较短超时（15s），失败即降级为“统计暂不可用”。
+ */
 export function getChangeSummaryApi(params: {
     model_uid?: string
     provider?: string
     start_time?: number
     end_time?: number
 }) {
-    return instance.get<ChangeSummary>({ url: '/cam/audit/changes/summary', params })
+    return instance.get<ChangeSummary>({
+        url: '/cam/audit/changes/summary',
+        params,
+        timeout: 15000,
+    })
 }
