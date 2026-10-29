@@ -9,6 +9,8 @@ const loading = ref(false)
 const records = ref<ChangeRecord[]>([])
 const total = ref(0)
 const summary = ref<ChangeSummary | null>(null)
+const summaryLoading = ref(false)
+const summaryFailed = ref(false)
 
 const query = ref({
     asset_id: '',
@@ -34,25 +36,47 @@ async function load() {
             params.start_time = query.value.timeRange[0].getTime()
             params.end_time = query.value.timeRange[1].getTime()
         }
-        const [listResp, summaryResp] = await Promise.allSettled([
-            listChangesApi(params as any),
-            getChangeSummaryApi({}),
+        // 列表与统计解耦：统计接口后端需对 540 万条变更记录做全量聚合，
+        // 实测极慢且常失败（详见 getChangeSummaryApi 注释）。若与列表一起 await，
+        // 整个页面会被拖住数分钟。故列表先渲染，统计单独异步补上。
+        await Promise.allSettled([
+            loadList(params),
+            loadSummary(),
         ])
-        if (listResp.status === 'fulfilled') {
-            records.value = listResp.value.data.items
-            total.value = listResp.value.data.total
-        }
-        if (summaryResp.status === 'fulfilled') {
-            summary.value = summaryResp.value.data
-            providerStats.value = Object.entries(summary.value.by_provider || {})
-                .map(([name, count]) => ({ name, count }))
-                .sort((a, b) => b.count - a.count)
-                .slice(0, 5)
-        }
     } catch (e: any) {
         ElMessage.error(e?.message || '加载变更审计失败')
     } finally {
         loading.value = false
+    }
+}
+
+async function loadList(params: Record<string, unknown>) {
+    try {
+        const resp = await listChangesApi(params as any)
+        records.value = resp.data.items
+        total.value = resp.data.total
+    } catch (e: any) {
+        ElMessage.error(e?.message || '加载变更列表失败')
+    }
+}
+
+async function loadSummary() {
+    summaryLoading.value = true
+    try {
+        const resp = await getChangeSummaryApi({})
+        summary.value = resp.data
+        providerStats.value = Object.entries(summary.value.by_provider || {})
+            .map(([name, count]) => ({ name, count }))
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 5)
+        summaryFailed.value = false
+    } catch {
+        // 统计属增强信息，失败不影响列表查阅：静默降级，由模板给出占位提示
+        summary.value = null
+        providerStats.value = []
+        summaryFailed.value = true
+    } finally {
+        summaryLoading.value = false
     }
 }
 
@@ -95,7 +119,7 @@ onMounted(load)
       <el-button class="refresh-btn" :icon="RefreshRight" circle @click="load" />
     </div>
 
-    <!-- 汇总：总数 + 云厂商分布 -->
+    <!-- 汇总：总数 + 云厂商分布。统计失败不影响列表使用，给出明确占位而非静默消失 -->
     <div class="summary-bar" v-if="summary">
       <div class="summary-item">
         <span class="s-num">{{ summary.total ?? 0 }}</span>
@@ -105,6 +129,12 @@ onMounted(load)
         <span class="s-num small">{{ p.count }}</span>
         <span class="s-label">{{ p.name }}</span>
       </div>
+    </div>
+    <div class="summary-bar summary-placeholder" v-else-if="summaryLoading">
+      <span class="s-label">正在统计变更汇总…</span>
+    </div>
+    <div class="summary-bar summary-placeholder" v-else-if="summaryFailed">
+      <span class="s-label">统计汇总暂不可用（数据量较大，后端聚合超时），列表数据不受影响</span>
     </div>
 
     <!-- 查询 -->
@@ -181,6 +211,8 @@ onMounted(load)
 .refresh-btn { margin-left: auto; }
 
 .summary-bar { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+/* 统计不可用/加载中的占位：低调呈现，避免与真实统计混淆 */
+.summary-placeholder { align-items: center; color: var(--text-secondary); font-size: 12.5px; }
 .summary-item {
   display: flex;
   flex-direction: column;
