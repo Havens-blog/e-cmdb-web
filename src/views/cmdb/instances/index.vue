@@ -528,7 +528,16 @@ const exportConfig: ExportFieldConfig<InstanceVO> = {
       return instance[key] || ''
     }
     if (key === 'uid') {
-      const type = instance.model_uid?.split('_')[0] || instance.model_uid
+      // 资产类型优先取后端模型表的中文名（model.uid -> model.name）。
+      // 原实现用 model_uid.split('_')[0] 再查 10 项硬编码表，实测 80 个模型里
+      // 70 个（88%）匹配不到，导出列会退化成厂商名或原文，例如：
+      //   cloud_rds -> "cloud"、aliyun_rds -> "aliyun"、host -> "host"
+      // 现已改为优先查模型表 name（关系型数据库 / 阿里云RDS / 主机 等）。
+      const modelUid = instance.model_uid || ''
+      const byName = modelOptions.value.find((m) => (m as any).uid === modelUid)
+      if (byName && (byName as any).name) return (byName as any).name
+      // 回退：模型表中没有该 uid 时（如未注册模型），保留按前缀推断的旧行为
+      const type = modelUid.split('_')[0] || modelUid
       const typeMap: Record<string, string> = {
         ecs: '云服务器', rds: 'RDS', redis: 'Redis', mongodb: 'MongoDB',
         vpc: 'VPC', eip: '弹性公网IP', nas: '文件存储', oss: '对象存储',
