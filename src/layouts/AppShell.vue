@@ -66,7 +66,7 @@ function hrefFor(path: string): string {
  */
 function isActive(path: string): boolean {
     if (route.path === path) return true
-    if (path === '/cmdb/instances' && route.path.startsWith('/assets/')) return true
+    if (path === '/instances' && route.path.startsWith('/assets/')) return true
     return route.path.startsWith(`${path}/`)
 }
 </script>

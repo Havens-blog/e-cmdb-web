@@ -24,12 +24,15 @@ const routes: RouteRecordRaw[] = [
         },
     },
     // ==================== CMDB 管理路由 ====================
+    // 注意：router base 已是 '/cmdb/'（与 vite base 一致），路由 path **不能**再带 '/cmdb' 前缀，
+    // 否则真实 URL 会变成 /cmdb/cmdb/models 这类双段形态（单段 /cmdb/instances 会落到兜底路由）。
     {
+        // 旧入口（原 '/cmdb'，真实 URL /cmdb/cmdb）→ 资源模型
         path: '/cmdb',
-        redirect: '/cmdb/models',
+        redirect: '/models',
     },
     {
-        path: '/cmdb/models',
+        path: '/models',
         name: 'CmdbModels',
         component: () => import('@/views/cmdb/models/index.vue'),
         meta: {
@@ -38,7 +41,7 @@ const routes: RouteRecordRaw[] = [
         },
     },
     {
-        path: '/cmdb/instances',
+        path: '/instances',
         name: 'CmdbInstances',
         component: () => import('@/views/cmdb/instances/index.vue'),
         meta: {
@@ -47,7 +50,7 @@ const routes: RouteRecordRaw[] = [
         },
     },
     {
-        path: '/cmdb/relations',
+        path: '/relations',
         name: 'CmdbRelations',
         component: () => import('@/views/cmdb/relations/index.vue'),
         meta: {
@@ -56,7 +59,9 @@ const routes: RouteRecordRaw[] = [
         },
     },
     {
-        path: '/cmdb/topology',
+        // 原 '/cmdb/topology'：去掉前缀后会与下方「资源拓扑」的 '/topology' 撞车，
+        // 因此收进模型域下（真实 URL /cmdb/models/topology），语义即「模型拓扑」
+        path: '/models/topology',
         name: 'CmdbTopology',
         component: () => import('@/views/cmdb/topology/index.vue'),
         meta: {
@@ -163,10 +168,17 @@ const routes: RouteRecordRaw[] = [
             hideInMenu: true,
         },
     },
-    // 兜底：未知路径回 CMDB 首页
+    // ==================== 旧 URL 兼容重定向 ====================
+    // 历史链接形如 /cmdb/cmdb/models（base + 带前缀的 path）。前缀修正后这些路径不再有对应路由，
+    // 这里显式重定向，保证旧书签与外部引用不失效。
+    { path: '/cmdb/models', redirect: '/models' },
+    { path: '/cmdb/instances', redirect: '/instances' },
+    { path: '/cmdb/relations', redirect: '/relations' },
+    { path: '/cmdb/topology', redirect: '/models/topology' },
+    // 兜底：未知路径回资源模型
     {
         path: '/:pathMatch(.*)*',
-        redirect: '/cmdb',
+        redirect: '/models',
     },
 ]
 
