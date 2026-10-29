@@ -1,6 +1,23 @@
 /**
  * CMDB (配置管理数据库) 类型定义
+ *
+ * 说明：与后端契约一一对应的实体/请求类型已迁移到 ./cmdb.generated，
+ * 由 e-cmdb-service/cmd/openapi 从后端 struct 生成（字段名与后端强一致）。
+ * 本文件保留：响应信封、查询参数、以及后端无对应 struct 的本地类型。
+ * 下方 import 供本文件内的组合类型引用；文件末尾 export * 对外统一导出。
  */
+
+import type {
+    ModelVO,
+    ModelGroupVO,
+    ModelGroupWithModelsVO,
+    InstanceVO,
+    ModelRelationVO,
+    InstanceRelationVO,
+    AttributeVO,
+    AttributeGroupVO,
+    AttributeGroupWithAttrsVO,
+} from './cmdb.generated'
 
 // ==================== 通用响应 ====================
 
@@ -23,46 +40,6 @@ export type ModelCategory = 'compute' | 'storage' | 'network' | 'database' | 'se
 
 /** 云厂商 */
 export type ModelProvider = 'aliyun' | 'aws' | 'azure' | 'all'
-
-/** 创建模型请求 */
-export interface CreateModelReq {
-    uid: string
-    name: string
-    model_group_id?: number
-    parent_uid?: string
-    category: ModelCategory
-    level?: number
-    icon?: string
-    description?: string
-    provider?: ModelProvider
-    extensible?: boolean
-}
-
-/** 更新模型请求 */
-export interface UpdateModelReq {
-    name?: string
-    model_group_id?: number
-    icon?: string
-    description?: string
-    extensible?: boolean
-}
-
-/** 模型视图对象 */
-export interface ModelVO {
-    id: number
-    uid: string
-    name: string
-    model_group_id?: number
-    parent_uid?: string
-    category: string
-    level: number
-    icon?: string
-    description?: string
-    provider: string
-    extensible: boolean
-    create_time: number
-    update_time: number
-}
 
 /** 模型列表查询参数 */
 export interface ListModelsParams {
@@ -102,41 +79,6 @@ export interface CreateModelResp {
 
 // ==================== 模型分组相关 ====================
 
-/** 创建模型分组请求 */
-export interface CreateModelGroupReq {
-    uid: string
-    name: string
-    icon?: string
-    sort_order?: number
-    description?: string
-}
-
-/** 更新模型分组请求 */
-export interface UpdateModelGroupReq {
-    name?: string
-    icon?: string
-    sort_order?: number
-    description?: string
-}
-
-/** 模型分组视图对象 */
-export interface ModelGroupVO {
-    id: number
-    uid: string
-    name: string
-    icon?: string
-    sort_order: number
-    is_builtin: boolean
-    description?: string
-    create_time: number
-    update_time: number
-}
-
-/** 带模型列表的分组视图对象 */
-export interface ModelGroupWithModelsVO extends ModelGroupVO {
-    models: ModelVO[]
-}
-
 /** 模型分组列表响应 */
 export interface ModelGroupListResp {
     code: number
@@ -164,56 +106,6 @@ export interface ModelGroupResp {
 }
 
 // ==================== 实例相关 ====================
-
-/** 创建实例请求 */
-export interface CreateInstanceReq {
-    /** 模型 UID（后端字段名 model_uid，必填） */
-    model_uid: string
-    asset_id: string
-    asset_name?: string
-    account_id?: number
-    attributes?: Record<string, any>
-}
-
-/** 更新实例请求 */
-export interface UpdateInstanceReq {
-    asset_name?: string
-    attributes?: Record<string, any>
-}
-
-/** Upsert 实例请求 */
-export interface UpsertInstanceReq {
-    /** 模型 UID（后端字段名 model_uid，必填）；租户由会话决定，无 tenant_id */
-    model_uid: string
-    asset_id: string
-    asset_name?: string
-    account_id?: number
-    attributes?: Record<string, any>
-}
-
-/** 批量创建实例请求 */
-export interface CreateBatchInstanceReq {
-    instances: CreateInstanceReq[]
-}
-
-/** 批量 Upsert 实例请求 */
-export interface UpsertBatchInstanceReq {
-    instances: UpsertInstanceReq[]
-}
-
-/** 实例视图对象 */
-export interface InstanceVO {
-    id: number
-    /** 模型 UID（后端 InstanceVO 字段名为 model_uid） */
-    model_uid: string
-    asset_id: string
-    asset_name?: string
-    tenant_id: string
-    account_id?: number
-    attributes?: Record<string, any>
-    create_time: number
-    update_time: number
-}
 
 /** 实例列表查询参数 */
 export interface ListInstancesParams {
@@ -274,7 +166,6 @@ export interface BatchCreateResp {
     }
 }
 
-
 // ==================== 模型关系类型相关 ====================
 
 /** 关系类型枚举 */
@@ -282,43 +173,6 @@ export type RelationType = 'belongs_to' | 'contains' | 'bindto' | 'connects' | '
 
 /** 关系方向枚举 */
 export type RelationDirection = 'one_to_one' | 'one_to_many' | 'many_to_many'
-
-/** 创建模型关系类型请求 */
-export interface CreateModelRelationReq {
-    uid: string
-    name: string
-    source_model_uid: string
-    target_model_uid: string
-    relation_type: RelationType
-    direction?: RelationDirection
-    source_to_target?: string
-    target_to_source?: string
-    description?: string
-}
-
-/** 更新模型关系类型请求 */
-export interface UpdateModelRelationReq {
-    name?: string
-    source_to_target?: string
-    target_to_source?: string
-    description?: string
-}
-
-/** 模型关系类型视图对象 */
-export interface ModelRelationVO {
-    id: number
-    uid: string
-    name: string
-    source_model_uid: string
-    target_model_uid: string
-    relation_type: string
-    direction: string
-    source_to_target?: string
-    target_to_source?: string
-    description?: string
-    create_time: number
-    update_time: number
-}
 
 /** 模型关系类型列表查询参数 */
 export interface ListModelRelationsParams {
@@ -355,21 +209,6 @@ export interface CreateInstanceRelationReq {
     relation_type_uid: string
     /** 租户由会话 claims 决定，后端不接受该字段（传入会被忽略） */
     tenant_id?: string
-}
-
-/** 批量创建实例关系请求 */
-export interface CreateBatchInstanceRelationReq {
-    relations: CreateInstanceRelationReq[]
-}
-
-/** 实例关系视图对象 */
-export interface InstanceRelationVO {
-    id: number
-    source_instance_id: number
-    target_instance_id: number
-    relation_type_uid: string
-    tenant_id: string
-    create_time: number
 }
 
 /** 实例关系列表查询参数 */
@@ -506,76 +345,6 @@ export interface FieldTypesResp {
 
 // ==================== 模型属性相关 ====================
 
-/** 创建属性请求 */
-export interface CreateAttributeReq {
-    field_uid: string
-    field_name: string
-    field_type: FieldType
-    group_id?: number
-    display_name?: string
-    display?: boolean
-    index?: number
-    required?: boolean
-    editable?: boolean
-    searchable?: boolean
-    unique?: boolean
-    secure?: boolean
-    link?: boolean
-    link_model?: string
-    option?: string
-    default?: string
-    placeholder?: string
-    description?: string
-}
-
-/** 更新属性请求 */
-export interface UpdateAttributeReq {
-    field_name?: string
-    field_type?: FieldType
-    group_id?: number
-    display_name?: string
-    display?: boolean
-    index?: number
-    required?: boolean
-    editable?: boolean
-    searchable?: boolean
-    unique?: boolean
-    secure?: boolean
-    link?: boolean
-    link_model?: string
-    option?: string
-    default?: string
-    placeholder?: string
-    description?: string
-}
-
-/** 属性视图对象 */
-export interface AttributeVO {
-    id: number
-    field_uid: string
-    field_name: string
-    field_type: string
-    /** 所属模型 UID（后端 AttributeVO 字段名为 model_uid） */
-    model_uid: string
-    group_id?: number
-    display_name?: string
-    display: boolean
-    index: number
-    required: boolean
-    editable: boolean
-    searchable: boolean
-    unique: boolean
-    secure: boolean
-    link: boolean
-    link_model?: string
-    option?: string
-    default?: string
-    placeholder?: string
-    description?: string
-    create_time: number
-    update_time: number
-}
-
 /** 属性列表查询参数 */
 export interface ListAttributesParams {
     group_id?: number
@@ -603,40 +372,6 @@ export interface AttributeResp {
 
 // ==================== 属性分组相关 ====================
 
-/** 创建属性分组请求 */
-export interface CreateAttributeGroupReq {
-    uid: string
-    name: string
-    index?: number
-    description?: string
-}
-
-/** 更新属性分组请求 */
-export interface UpdateAttributeGroupReq {
-    name?: string
-    index?: number
-    description?: string
-}
-
-/** 属性分组视图对象 */
-export interface AttributeGroupVO {
-    id: number
-    uid: string
-    name: string
-    /** 所属模型 UID（后端 AttributeGroupVO 字段） */
-    model_uid: string
-    index: number
-    is_builtin: boolean
-    description?: string
-    create_time: number
-    update_time: number
-}
-
-/** 带属性列表的分组视图对象 */
-export interface AttributeGroupWithAttrsVO extends AttributeGroupVO {
-    attributes: AttributeVO[]
-}
-
 /** 属性分组列表响应 */
 export interface AttributeGroupListResp {
     code: number
@@ -657,3 +392,9 @@ export interface AttributeGroupResp {
     msg: string
     data: AttributeGroupVO
 }
+
+// ==================== 由后端 OpenAPI 生成的契约类型 ====================
+// 以下类型不再手写，改由 e-cmdb-service/cmd/openapi 从后端 struct 生成，
+// 保证字段名与后端一致（历史已 4 次因手写与后端不一致导致缺陷）。
+// 重新生成：go run ./cmd/openapi -root . -o docs/openapi.json -ts-out <本文件同级的 cmdb.generated.ts>
+export * from './cmdb.generated'

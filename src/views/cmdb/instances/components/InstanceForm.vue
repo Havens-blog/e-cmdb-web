@@ -81,7 +81,8 @@ const form = reactive({
   uid: '',
   asset_id: '',
   asset_name: '',
-  tenant_id: '',
+  // 后端 InstanceVO.tenant_id 为 int64（number）；租户由会话决定，本字段仅在编辑时只读回显
+  tenant_id: undefined as number | undefined,
   account_id: undefined as number | undefined,
 })
 
@@ -97,7 +98,7 @@ const reset = () => {
   form.uid = ''
   form.asset_id = ''
   form.asset_name = ''
-  form.tenant_id = ''
+  form.tenant_id = undefined
   form.account_id = undefined
   attributeList.value = []
   formRef.value?.resetFields()
