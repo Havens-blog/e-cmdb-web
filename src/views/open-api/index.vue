@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
     createTokenApi, listTokensApi, revokeTokenApi,
-    createWebhookApi, listWebhooksApi, deleteWebhookApi,
+    createWebhookApi, listWebhooksApi, deleteWebhookApi, updateWebhookApi,
     type ApiToken, type Webhook,
 } from '@/api/open-api'
-import { Plus, Delete, DocumentCopy, RefreshRight } from '@element-plus/icons-vue'
+import { Plus, Delete, DocumentCopy, RefreshRight, Edit } from '@element-plus/icons-vue'
 import { formatTimestamp } from '@/utils/time'
 
 const activeTab = ref<'tokens' | 'webhooks'>('tokens')
@@ -62,7 +62,17 @@ function copyToken() {
 const webhooks = ref<Webhook[]>([])
 const webhookLoading = ref(false)
 const webhookDialogVisible = ref(false)
+/**
+ * 编辑中的 Webhook id；为空表示「创建」模式。
+ *
+ * 背景：后端已有 PUT /webhooks/:id，前端 api/open-api.ts 也已封装
+ * updateWebhookApi，但页面此前只有「创建/删除」两个入口，
+ * 导致用户创建订阅后无法修改（只能删了重建）。
+ */
+const editingWebhookId = ref<number | null>(null)
 const webhookForm = ref({ name: '', target_url: '', secret: '', event_types: ['instance.created', 'instance.updated', 'instance.deleted'] })
+
+const isEditingWebhook = computed(() => editingWebhookId.value !== null)
 
 const eventOptions = [
     { value: 'instance.created', label: '实例创建' },
@@ -84,14 +94,56 @@ async function loadWebhooks() {
     }
 }
 
+/** 打开「创建」对话框：清空表单与编辑态 */
+function openCreateWebhook() {
+    editingWebhookId.value = null
+    webhookForm.value = {
+        name: '',
+        target_url: '',
+        secret: '',
+        event_types: ['instance.created', 'instance.updated', 'instance.deleted'],
+    }
+    webhookDialogVisible.value = true
+}
+
+/**
+ * 打开「编辑」对话框：回填现有值。
+ *
+ * secret 不回填：列表接口不返回密钥明文，留空表示「不修改密钥」，
+ * 提交时不传该字段（避免把空字符串写成密钥）。
+ */
+function openEditWebhook(w: Webhook) {
+    editingWebhookId.value = w.id
+    webhookForm.value = {
+        name: w.name || '',
+        target_url: w.target_url || '',
+        secret: '',
+        event_types: [...(w.event_types || [])],
+    }
+    webhookDialogVisible.value = true
+}
+
 async function handleCreateWebhook() {
     try {
-        await createWebhookApi({ ...webhookForm.value })
-        ElMessage.success('已创建订阅')
+        if (editingWebhookId.value !== null) {
+            const payload: Record<string, unknown> = {
+                name: webhookForm.value.name,
+                target_url: webhookForm.value.target_url,
+                event_types: webhookForm.value.event_types,
+            }
+            // 仅在用户填写了新密钥时才提交 secret，避免覆盖为空
+            if (webhookForm.value.secret) payload.secret = webhookForm.value.secret
+            await updateWebhookApi(editingWebhookId.value, payload)
+            ElMessage.success('已更新订阅')
+        } else {
+            await createWebhookApi({ ...webhookForm.value })
+            ElMessage.success('已创建订阅')
+        }
         webhookDialogVisible.value = false
+        editingWebhookId.value = null
         await loadWebhooks()
     } catch (e: any) {
-        ElMessage.error(e?.message || '创建 Webhook 失败')
+        ElMessage.error(e?.message || (editingWebhookId.value !== null ? '更新 Webhook 失败' : '创建 Webhook 失败'))
     }
 }
 
@@ -151,7 +203,7 @@ onMounted(() => { loadTokens(); loadWebhooks() })
       <!-- ==================== Webhook ==================== -->
       <el-tab-pane label="Webhook 订阅" name="webhooks">
         <div class="toolbar">
-          <el-button type="primary" :icon="Plus" @click="webhookDialogVisible = true">创建订阅</el-button>
+          <el-button type="primary" :icon="Plus" @click="openCreateWebhook">创建订阅</el-button>
           <el-button :icon="RefreshRight" circle @click="loadWebhooks" />
         </div>
 
@@ -168,8 +220,9 @@ onMounted(() => { loadTokens(); loadWebhooks() })
               <span class="status" :class="row.status">{{ row.status === 'active' ? '启用' : '停用' }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="100" fixed="right">
+          <el-table-column label="操作" width="140" fixed="right">
             <template #default="{ row }">
+              <el-button type="primary" link :icon="Edit" @click="openEditWebhook(row)">编辑</el-button>
               <el-button type="danger" link :icon="Delete" @click="handleDeleteWebhook(row)">删除</el-button>
             </template>
           </el-table-column>
@@ -200,11 +253,16 @@ onMounted(() => { loadTokens(); loadWebhooks() })
     </el-dialog>
 
     <!-- Webhook 创建对话框 -->
-    <el-dialog v-model="webhookDialogVisible" title="创建 Webhook 订阅" width="520px" :close-on-click-modal="false">
+    <el-dialog v-model="webhookDialogVisible" :title="isEditingWebhook ? '编辑 Webhook 订阅' : '创建 Webhook 订阅'" width="520px" :close-on-click-modal="false">
       <el-form label-width="80px">
         <el-form-item label="名称"><el-input v-model="webhookForm.name" placeholder="如 notify-slack" /></el-form-item>
         <el-form-item label="目标 URL"><el-input v-model="webhookForm.target_url" placeholder="https://example.com/hook" /></el-form-item>
-        <el-form-item label="签名密钥"><el-input v-model="webhookForm.secret" placeholder="HMAC 签名密钥（可选）" /></el-form-item>
+        <el-form-item label="签名密钥">
+          <el-input
+            v-model="webhookForm.secret"
+            :placeholder="isEditingWebhook ? '留空表示不修改现有密钥' : 'HMAC 签名密钥（可选）'"
+          />
+        </el-form-item>
         <el-form-item label="订阅事件">
           <el-select v-model="webhookForm.event_types" multiple style="width: 100%">
             <el-option v-for="e in eventOptions" :key="e.value" :label="e.label" :value="e.value" />
@@ -213,7 +271,7 @@ onMounted(() => { loadTokens(); loadWebhooks() })
       </el-form>
       <template #footer>
         <el-button @click="webhookDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="webhookLoading" @click="handleCreateWebhook">创建</el-button>
+        <el-button type="primary" :loading="webhookLoading" @click="handleCreateWebhook">{{ isEditingWebhook ? '保存' : '创建' }}</el-button>
       </template>
     </el-dialog>
   </div>
