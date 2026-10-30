@@ -75,7 +75,21 @@
       <div class="stat-row"><span>域名入口</span><strong>{{ store.graphData.stats.domain_count }}</strong></div>
       <div class="stat-row"><span>链路节点</span><strong>{{ store.graphData.stats.node_count }}</strong></div>
       <div class="stat-row"><span>活跃连线</span><strong class="ok">{{ store.graphData.stats.edge_count }}</strong></div>
-      <div class="stat-row"><span>断链节点</span><strong class="ng">{{ store.graphData.stats.broken_count }}</strong></div>
+      <!--
+        语义修正（两处）：
+        1) 后端 computeBrokenCount 统计的是「悬空**边**数」
+           （source_id 或 target_id 不在节点集内的边，含 pending），
+           原标签「断链节点」会让用户误以为节点自身断链。
+        2) 该值由 tenantBrokenCount 按**租户全量**计算，
+           不随 provider / type / source_collector / 域名 筛选变化，
+           因此可能与「活跃连线」（当前视图）不可比 —— 实测某域名视图下
+           活跃连线 16、断链连线 75，两个数字并列会让人困惑。
+           故在此显式标注口径。
+      -->
+      <div class="stat-row">
+        <span>断链连线 <em class="stat-scope">租户全量</em></span>
+        <strong class="ng">{{ store.graphData.stats.broken_count }}</strong>
+      </div>
       <div class="stat-row"><span>最大深度</span><strong>{{ store.graphData.stats.max_depth }}</strong></div>
     </div>
 
@@ -236,6 +250,18 @@ function toggleSource(v: string) {
 .stat-row strong { font-size: 14px; font-weight: 700; color: var(--text-primary); }
 .stat-row strong.ok { color: var(--accent-green); }
 .stat-row strong.ng { color: var(--accent-red); }
+
+/* 「租户全量」角标：提示该指标的计算范围与视图筛选无关 */
+.stat-scope {
+  margin-left: 4px;
+  padding: 0 4px;
+  font-style: normal;
+  font-size: 10px;
+  line-height: 14px;
+  border-radius: 3px;
+  color: var(--text-tertiary);
+  background: rgba(255, 255, 255, 0.08);
+}
 .legend-grid { display: flex; flex-direction: column; gap: 4px; }
 .legend-col { display: flex; flex-direction: column; gap: 4px; }
 .legend-item { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--text-secondary); }
