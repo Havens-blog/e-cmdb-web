@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { getQualityOverviewApi, listQualityIssuesApi, type QualityIssue, type QualityOverview } from '@/api/quality'
+import { getOrphanSourcesApi, getQualityOverviewApi, listQualityIssuesApi, type OrphanModelGroup, type QualityIssue, type QualityOverview } from '@/api/quality'
 import { CircleCheck, Warning, Connection, Box, RefreshRight } from '@element-plus/icons-vue'
 
 const loading = ref(false)
@@ -9,6 +9,24 @@ const overview = ref<QualityOverview | null>(null)
 const issues = ref<QualityIssue[]>([])
 const total = ref(0)
 const activeType = ref<'orphan_instance' | 'missing_field' | 'dangling_relation' | ''>('')
+
+/**
+ * 孤儿实例来源（按缺失模型聚合）。
+ *
+ * 为什么需要：孤儿总数（如 12760）本身不可执行 —— 用户不知道是哪些模型缺失。
+ * 实测 tenant 3：12760 条孤儿来自 58 个未定义模型。展示来源后，
+ * 用户能直接看出「补 volcengine_disk / volcengine_snapshot 等模型」才是解法。
+ */
+const orphanGroups = ref<OrphanModelGroup[]>([])
+const orphanTotal = ref(0)
+const orphanLoading = ref(false)
+
+/** 最大分组数量，用作进度条基准（避免模板里取 orphanGroups[0] 可能为空） */
+const orphanMaxCount = computed(() => {
+    let m = 0
+    for (const g of orphanGroups.value) if (g.count > m) m = g.count
+    return m || 1
+})
 
 const typeMeta: Record<string, { label: string; color: string; icon: any }> = {
     orphan_instance: { label: '孤儿实例', color: 'var(--accent-red)', icon: Box },
@@ -55,10 +73,26 @@ async function loadIssues() {
     }
 }
 
+/** 加载孤儿来源分布（仅孤儿类型需要，惰性加载，结果缓存在组件内） */
+async function loadOrphanSources() {
+    if (orphanGroups.value.length) return
+    orphanLoading.value = true
+    try {
+        const resp = await getOrphanSourcesApi()
+        orphanGroups.value = resp.data.groups || []
+        orphanTotal.value = resp.data.total || 0
+    } catch (e: any) {
+        ElMessage.error(e?.message || '加载孤儿来源失败')
+    } finally {
+        orphanLoading.value = false
+    }
+}
+
 function switchType(t: '' | 'orphan_instance' | 'missing_field' | 'dangling_relation') {
     activeType.value = t
     page.value.offset = 0
     loadIssues()
+    if (t === 'orphan_instance') loadOrphanSources()
 }
 
 onMounted(() => { loadOverview() })
@@ -100,6 +134,44 @@ onMounted(() => { loadOverview() })
           <div class="metric-value">{{ overview.total_instances }}</div>
           <div class="metric-label">实例总数</div>
         </div>
+      </div>
+    </div>
+
+    <!--
+      孤儿来源：按缺失模型聚合。
+      孤儿总数（如 12760）本身不可执行 —— 用户不知道是哪些模型缺失造成的。
+      这里直接给出「哪些模型缺失、各多少条」，让数字变成待办。
+    -->
+    <div v-if="activeType === 'orphan_instance' && orphanGroups.length" class="orphan-source" v-loading="orphanLoading">
+      <div class="orphan-source-head">
+        <h2 class="section-title">
+          孤儿来源
+          <span class="orphan-hint">
+            共 {{ orphanTotal }} 条孤儿，来自 {{ orphanGroups.length }} 个未定义的模型
+          </span>
+        </h2>
+      </div>
+      <div class="orphan-bars">
+        <div
+          v-for="g in orphanGroups.slice(0, 12)"
+          :key="g.model_uid || '__empty__'"
+          class="orphan-bar"
+        >
+          <span class="bar-label" :title="g.model_uid || '(model_uid 为空)'">
+            {{ g.model_uid || '(model_uid 为空)' }}
+          </span>
+          <span class="bar-track">
+            <span
+              class="bar-fill"
+              :style="{ width: Math.max(2, (g.count / orphanMaxCount) * 100) + '%' }"
+            />
+          </span>
+          <span class="bar-count">{{ g.count }}</span>
+        </div>
+      </div>
+      <div v-if="orphanGroups.length > 12" class="orphan-more">
+        仅展示前 12 个，其余 {{ orphanGroups.length - 12 }} 个模型合计
+        {{ orphanGroups.slice(12).reduce((s, g) => s + g.count, 0) }} 条
       </div>
     </div>
 
@@ -224,4 +296,71 @@ onMounted(() => { loadOverview() })
 }
 
 .pagination { display: flex; justify-content: flex-end; margin-top: 14px; }
-</style>
+
+/* ==================== 孤儿来源 ==================== */
+.orphan-source {
+  margin-top: 16px;
+  padding: 16px 20px;
+  border-radius: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+}
+
+.orphan-source-head {
+  margin-bottom: 12px;
+}
+
+.orphan-hint {
+  margin-left: 8px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-tertiary);
+}
+
+.orphan-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.orphan-bar {
+  display: grid;
+  grid-template-columns: 180px 1fr 64px;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+}
+
+.bar-label {
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bar-track {
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  background: var(--accent-red);
+  opacity: 0.75;
+}
+
+.bar-count {
+  text-align: right;
+  font-weight: 600;
+  color: var(--accent-red);
+}
+
+.orphan-more {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+}</style>
