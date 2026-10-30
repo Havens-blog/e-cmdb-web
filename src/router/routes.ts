@@ -129,6 +129,12 @@ const routes: RouteRecordRaw[] = [
     },
     // ==================== 数据质量 ====================
     {
+        path: '/dns',
+        name: 'Dns',
+        component: () => import('@/views/dns/index.vue'),
+        meta: { title: 'DNS 解析' },
+    },
+    {
         path: '/quality',
         name: 'Quality',
         component: () => import('@/views/quality/index.vue'),

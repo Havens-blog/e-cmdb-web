@@ -59,6 +59,7 @@ export const menuGroups: MenuGroup[] = [
             { key: 'topology', path: '/topology', title: '资源拓扑', icon: 'caise-computer' },
             { key: 'impact', path: '/impact', title: '影响分析', icon: 'monitor-analysis' },
             { key: 'quality', path: '/quality', title: '数据质量', icon: 'monitor-zongfenhegexiangpingfen' },
+            { key: 'dns', path: '/dns', title: 'DNS 解析', icon: 'cmdb-discovery_resources' },
             { key: 'audit', path: '/audit', title: '变更审计', icon: 'icon-xianxing-shenji' },
         ],
     },
