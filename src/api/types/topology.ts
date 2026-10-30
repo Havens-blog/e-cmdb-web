@@ -39,6 +39,16 @@ export interface TopoStats {
     node_count: number
     edge_count: number
     domain_count: number
+    /**
+     * 断链**连线**数（不是节点数）。
+     *
+     * 后端 `computeBrokenCount` 的语义：source_id 或 target_id 不在节点集合内的
+     * **边**的数量（含 pending 边）。且该值按**租户全量**计算，
+     * 不随视图的 provider / type / source_collector 筛选变化，
+     * 因此与 `node_count` / `edge_count` 可能不是同一范围。
+     *
+     * 历史缺陷：页面标签曾写作「断链节点」，会让用户误以为节点自身断链。
+     */
     broken_count: number
     max_depth: number
 }
