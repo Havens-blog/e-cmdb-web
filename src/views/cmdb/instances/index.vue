@@ -38,7 +38,7 @@
           placeholder="资产类型"
           clearable
           style="width: 140px"
-          @change="handleSearch"
+          @change="handleAssetTypeChange"
         >
           <el-option
             v-for="item in assetTypeOptions"
@@ -575,6 +575,21 @@ const handleSearch = () => {
 // 清除模型过滤标签，回到全量列表
 const handleClearModelFilter = () => {
   filters.model_uid = ''
+  handleSearch()
+}
+
+/**
+ * 资产类型下拉变更。
+ *
+ * 资产类型与「按模型过滤」共用后端 model_uid 参数，且资产类型优先
+ * （见 utils/instanceQuery 的 buildInstanceListParams）。因此用户一旦显式选了
+ * 资产类型，就应清掉 URL 带入的 model_uid；否则页面会残留
+ * 「按模型过滤: <旧值>」标签，与实际列表内容不符（实测存在）。
+ */
+const handleAssetTypeChange = () => {
+  if (filters.asset_type && filters.model_uid) {
+    filters.model_uid = ''
+  }
   handleSearch()
 }
 
