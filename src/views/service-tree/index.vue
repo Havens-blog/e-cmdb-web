@@ -34,6 +34,18 @@
             </el-input>
           </div>
           <div class="tree-body">
+            <!--
+              资产聚合失败提示（实测 2026-10-31）：
+              asset-summary 在 eiam 服务令牌未配置时返回 HTTP 200 +
+              body {code:500, msg:"...eiam.token_url 未配置..."}，
+              原实现只 console.error，页面无任何提示，用户无法区分
+              「聚合失败」与「真的是 0 个资产」。此处让失败可见并可重试。
+            -->
+            <div v-if="summaryFailedIds.size > 0" class="summary-failed-tip">
+              <el-icon><Warning /></el-icon>
+              <span>{{ summaryFailedIds.size }} 个节点的资产聚合失败，徽标显示为「—」</span>
+              <el-button link type="primary" size="small" @click="retryFailedSummaries">重试</el-button>
+            </div>
             <el-tree
               ref="treeRef"
               v-loading="treeLoading"
@@ -55,8 +67,20 @@
                   </el-icon>
                   <span class="node-label">{{ node.label }}</span>
                   <!-- 子树资产数徽标（任务6 asset-summary）：非 0 高亮，0 灰显 -->
+                  <!-- 失败时显示「—」并用 title 说明，避免与「真实为 0」混淆 -->
                   <el-tag
-                    v-if="badgeOf(data.id) !== null"
+                    v-if="summaryFailed(data.id)"
+                    class="node-badge node-badge--failed"
+                    size="small"
+                    type="danger"
+                    effect="light"
+                    round
+                    :title="'该节点资产聚合失败，数字不可用（可点刷新重试）'"
+                  >
+                    —
+                  </el-tag>
+                  <el-tag
+                    v-else-if="badgeOf(data.id) !== null"
                     class="node-badge"
                     :class="{ 'node-badge--zero': badgeOf(data.id) === 0 }"
                     size="small"
@@ -576,7 +600,8 @@ import {
     Plus,
     Rank,
     Refresh,
-    Search
+    Search,
+    Warning
 } from '@element-plus/icons-vue'
 import { getProviderLabel } from '@/utils/constants'
 import { SERVICE_NODE_STATUS_LABELS, labelOfLenient } from '@/utils/fieldLabels'
@@ -723,14 +748,52 @@ const applySummary = (nodeId: number, summary: AssetSummary) => {
   }
 }
 
+/**
+ * 资产聚合失败的节点集合。
+ *
+ * 背景（实测 2026-10-31，tenant 3）：`asset-summary` 接口在 eiam 服务令牌
+ * 未配置时返回 **HTTP 200 + body `{code:500, msg:"...eiam.token_url 未配置..."}`**，
+ * axios 不视为异常吗？—— 请求层拦截器会抛错，但原实现只 `console.error`，
+ * 页面上什么都不显示。
+ *
+ * 后果：用户看到「嘉立创」节点没有数字徽标、其他节点显示 0，
+ * **无法区分「聚合失败」与「真的是 0 个资产」**，也不会去重试。
+ *
+ * 修复：记录失败节点，徽标位置显示「—」并给出 tooltip，
+ * 同时在顶部提示一次「部分节点资产聚合失败」，让失败可见。
+ */
+const summaryFailedIds = ref<Set<number>>(new Set())
+
+const markSummaryFailed = (nodeId: number) => {
+  const next = new Set(summaryFailedIds.value)
+  next.add(nodeId)
+  summaryFailedIds.value = next
+}
+
+/** 重试成功后清除失败标记 */
+const clearSummaryFailed = (nodeId: number) => {
+  if (!summaryFailedIds.value.has(nodeId)) return
+  const next = new Set(summaryFailedIds.value)
+  next.delete(nodeId)
+  summaryFailedIds.value = next
+}
+
+/** 该节点的聚合是否失败（失败时徽标显示「—」而非空白） */
+const summaryFailed = (id: number): boolean => summaryFailedIds.value.has(id)
+
 // 拉取单节点 summary；单点失败容忍不阻塞其余
 const fetchNodeSummary = async (nodeId: number): Promise<AssetSummary | null> => {
   try {
     const res = await getNodeAssetSummaryApi(nodeId)
     const summary = (res.data as AssetSummary) || null
-    if (summary) applySummary(nodeId, summary)
+    if (summary) {
+      applySummary(nodeId, summary)
+      clearSummaryFailed(nodeId)
+    }
     return summary
   } catch (error) {
+    // 失败必须对用户可见：记录失败节点，徽标显示「—」，顶部给一次性提示
+    markSummaryFailed(nodeId)
     console.error(`加载节点 ${nodeId} 资产聚合失败:`, error)
     return null
   }
@@ -747,6 +810,19 @@ const fetchSummariesBatch = async (ids: number[], concurrency = 5) => {
     }
   }
   await Promise.all(Array.from({ length: Math.min(concurrency, ids.length) }, () => worker()))
+}
+
+/**
+ * 重试所有聚合失败的节点。
+ *
+ * 典型场景：后端 eiam.token_url 等配置补齐后，用户不必刷新整页即可恢复。
+ * 先清空失败集合再重新拉取，避免成功后仍残留「—」。
+ */
+const retryFailedSummaries = async () => {
+  const ids = Array.from(summaryFailedIds.value)
+  if (!ids.length) return
+  summaryFailedIds.value = new Set()
+  await fetchSummariesBatch(ids)
 }
 
 const collectNodeIds = (nodes: ServiceTreeNode[], acc: number[] = []): number[] => {
@@ -1763,4 +1839,25 @@ onUnmounted(() => {
   border-color: rgba(16, 185, 129, 0.3);
   color: color-mix(in srgb, var(--accent-green) 65%, #fff);
 }
-</style>
+
+/* ==================== 资产聚合失败提示 ==================== */
+.summary-failed-tip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--accent-yellow, #e6a23c);
+  background: rgba(230, 162, 60, 0.12);
+  border: 1px solid rgba(230, 162, 60, 0.3);
+}
+
+.summary-failed-tip .el-button {
+  margin-left: auto;
+}
+
+.node-badge--failed {
+  font-weight: 600;
+}</style>
