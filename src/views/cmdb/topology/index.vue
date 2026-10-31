@@ -1578,4 +1578,18 @@ onUnmounted(() => {
 .topology-page .topology-toolbar :deep(.el-select .el-select__placeholder) {
   color: var(--text-secondary);
 }
+
+/* ── 窄屏（≤560px）：页头竖排，标题不再被右侧动作组挤压 ──────────────────
+   实测（iter123，390px、内容区 278px）：.page-header 单行 flex + space-between，
+   左侧 .header-left 只分到 55px，「拓扑视图」被折成 4 行。 */
+@media (max-width: 560px) {
+  .topology-page .page-header {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .topology-page .page-header .header-left {
+    flex: 1 0 100%;
+  }
+}
 </style>

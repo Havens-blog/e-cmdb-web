@@ -1860,4 +1860,20 @@ onUnmounted(() => {
 
 .node-badge--failed {
   font-weight: 600;
+}
+
+// ── 窄屏（≤560px）：页头改为竖排，标题不再被右侧动作组挤压 ──────────────
+// 背景（iter123 实测，390px 视口、内容区 278px）：
+//   .page-header 是 display:flex + justify-content:space-between 的单行，
+//   左侧 .header-left（标题+副标题）与右侧动作组竞争宽度，标题只分到 114px（rules 页更窄，仅 28px），
+//   「绑定规则管理」被折成 6 行。窄屏下允许换行，让标题块独占一行。
+@media (max-width: 560px) {
+  .page-header {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .header-left {
+    flex: 1 0 100%;
+  }
 }</style>
