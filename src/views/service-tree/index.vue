@@ -1867,7 +1867,7 @@ onUnmounted(() => {
 //   .page-header 是 display:flex + justify-content:space-between 的单行，
 //   左侧 .header-left（标题+副标题）与右侧动作组竞争宽度，标题只分到 114px（rules 页更窄，仅 28px），
 //   「绑定规则管理」被折成 6 行。窄屏下允许换行，让标题块独占一行。
-@media (max-width: 560px) {
+@media (max-width: 768px) {
   .page-header {
     flex-wrap: wrap;
     gap: 12px;

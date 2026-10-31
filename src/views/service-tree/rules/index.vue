@@ -565,7 +565,7 @@ onMounted(async () => {
 // ── 窄屏（≤560px）：页头竖排，标题不再被右侧动作组挤成一字一行 ──────────
 // 实测（iter123，390px、内容区 278px）：.page-header 单行 flex + space-between，
 // 左侧 .header-left 只分到 28px，「绑定规则管理」被折成 6 行。
-@media (max-width: 560px) {
+@media (max-width: 768px) {
   .rules-page .page-header {
     flex-wrap: wrap;
     gap: 12px;
