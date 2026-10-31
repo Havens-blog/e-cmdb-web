@@ -200,6 +200,9 @@ const loadModelAttrs = async (modelUid: string) => {
         attrValues[a.field_uid] = String(a.default)
       }
     }
+    // 字段定义到位后，把「其他属性」里与模型字段重名的行剔除，
+    // 避免同一字段两处渲染、且手动区覆盖模型字段的编辑结果。
+    pruneAttrList()
   } catch {
     // 字段定义拉取失败不阻塞表单：退化为原有的手动「动态属性」录入
     modelAttrs.value = []
@@ -285,6 +288,28 @@ watch(
 
 const addAttribute = () => {
   attributeList.value.push({ key: '', value: '' })
+}
+
+/**
+ * 从「其他属性」列表里剔除已由模型字段渲染的键。
+ *
+ * 缺陷修复（实测 2026-11-01）：选中 ecs 模型编辑实例时，其 44 个 attributes 键中
+ * 有 **12 个与模型字段同名**（provider / region / status / cpu / memory / os_type /
+ * private_ip / public_ip / vpc_id / zone / instance_type / cloud_account_id）。
+ * 这些键会同时出现在「模型字段」区与「其他属性」区两处，
+ * 而 buildAttributes 中手动区的写入在后、会**覆盖**模型字段的值
+ * → 用户在模型字段里做的修改被静默丢弃，保存后看起来「没生效」。
+ *
+ * 处理：模型字段负责这些键，手动区只保留模型未定义的键，
+ * 保证同一字段在表单上只出现一处、只有一个来源。
+ */
+const pruneAttrList = () => {
+  if (!modelAttrs.value.length) return
+  const modelKeys = new Set(modelAttrs.value.map((a) => a.field_uid))
+  const kept = attributeList.value.filter((row) => !modelKeys.has(row.key.trim()))
+  if (kept.length !== attributeList.value.length) {
+    attributeList.value = kept
+  }
 }
 
 const removeAttribute = (index: number) => {
