@@ -233,6 +233,42 @@ $sidebar-collapsed-width: 64px;
     }
 }
 
+// ── 窄屏（≤560px）：强制折叠成图标栏 ───────────────────────────────
+// 背景（iter121 实测）：390px 视口下侧栏仍按 $sidebar-width(210px) 渲染且 flex-shrink: 0，
+// 把内容区挤到只剩 84–132px —— 页面标题、统计卡标签、表头等一律被压成一字一行
+// （cmdb 全站在 390px 有 35 处文字压缩，14/21 路由受影响，根因都是这一处）。
+// 这里自动折叠成 64px 图标栏，内容区可回到 ~300px；用户仍可用底部按钮手动展开。
+@media (max-width: 560px) {
+    .sidebar {
+        width: $sidebar-collapsed-width;
+
+        .menu-item {
+            justify-content: center;
+            padding: 0;
+        }
+
+        .tenant-badge {
+            justify-content: center;
+            padding: 0;
+        }
+
+        .sidebar-user {
+            justify-content: center;
+            padding: 12px 6px;
+        }
+
+        // 折叠态下这些文字节点仍会渲染（模板用 appStore.sidebarCollapsed 控制，
+        // 与纯 CSS 折叠无关），必须一并隐藏，否则会溢出 64px 的图标栏
+        .menu-title,
+        .menu-group-title,
+        .logo-wordmark,
+        .tenant-text,
+        .user-label {
+            display: none;
+        }
+    }
+}
+
 // ── 顶部：logo + 租户徽标 ──────────────────────────────────────────────
 .sidebar-top {
     padding: 16px 12px 0;
