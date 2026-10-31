@@ -209,11 +209,23 @@ const loadModelAttrs = async (modelUid: string) => {
 }
 
 // 模型切换时重新加载字段定义
+//
+// 注意：这里**不能无条件清空 attrValues**。
+// 编辑既有实例时的执行顺序是：
+//   1) watch(props.instance) 先设置 form.uid，再回填 attrValues（已有属性）
+//   2) form.uid 的变化又触发本 watch —— 若在此清空，会把刚回填的值全部抹掉
+// 实测后果（2026-11-01）：打开 ecs 实例编辑，模型定义的 17 个字段中
+// 有 12 个在数据里存在（provider/region/status/cpu/memory/os_type/private_ip…），
+// 但表单只回填了 4 个通用字段，模型字段全空。
+// 修正：仅当模型**真的变化**（与上次加载的不同）时才清空。
+let lastLoadedUid = ''
 watch(
   () => form.uid,
   (uid) => {
-    // 清掉上一模型的字段值，避免串模型
-    for (const k of Object.keys(attrValues)) delete attrValues[k]
+    if (uid !== lastLoadedUid) {
+      for (const k of Object.keys(attrValues)) delete attrValues[k]
+      lastLoadedUid = uid
+    }
     void loadModelAttrs(uid)
   }
 )
@@ -231,6 +243,9 @@ const reset = () => {
   form.tenant_id = undefined
   form.account_id = undefined
   attributeList.value = []
+  // 新建时清空模型字段值与「已加载模型」标记
+  for (const k of Object.keys(attrValues)) delete attrValues[k]
+  lastLoadedUid = ''
   formRef.value?.resetFields()
 }
 
@@ -238,6 +253,10 @@ watch(
   () => props.instance,
   (val) => {
     if (val) {
+      // 先记下本次要展示的模型，避免随后的 watch(form.uid) 把刚回填的属性清空。
+      // （watch 回调是异步的：本函数先回填 attrValues，之后 form.uid 的 watcher
+      //  才会触发；若不预置该标记，它会把回填值全部 delete 掉。）
+      lastLoadedUid = val.model_uid
       form.uid = val.model_uid
       form.asset_id = val.asset_id
       form.asset_name = val.asset_name || ''
