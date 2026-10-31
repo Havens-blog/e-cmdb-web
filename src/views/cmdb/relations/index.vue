@@ -331,9 +331,39 @@ const dialogTitle = computed(() => (isEdit.value ? '编辑关系' : '创建关�
 const hasFilters = computed(() => filters.keyword || filters.relation_type || filters.source_model_uid)
 const totalPages = computed(() => Math.ceil(pagination.total / pagination.size) || 1)
 
-const belongsToCount = computed(() => relations.value.filter(r => r.relation_type === 'belongs_to').length)
-const bindtoCount = computed(() => relations.value.filter(r => r.relation_type === 'bindto').length)
-const dependsOnCount = computed(() => relations.value.filter(r => r.relation_type === 'depends_on').length)
+/**
+ * 关系类型计数（全量，不受当前页影响）。
+ *
+ * 缺陷修复（实测 2026-10-31，tenant 3）：
+ * 原实现基于当前页数据统计：
+ *   const belongsToCount = computed(() => relations.value.filter(...).length)
+ * 而列表分页 size=20、总数 28，导致「归属」显示 7、「绑定」显示 3，
+ * 实际接口按类型过滤分别为 12 和 6 —— 顶部统计与真实数据不符。
+ *
+ * 现改为单独拉一次全量（limit 足够大）做统计；模型关系是元数据，
+ * 量级很小（实测 28 条），额外请求成本可忽略。
+ */
+const typeCounts = ref<Record<string, number>>({})
+const belongsToCount = computed(() => typeCounts.value.belongs_to ?? 0)
+const bindtoCount = computed(() => typeCounts.value.bindto ?? 0)
+const dependsOnCount = computed(() => typeCounts.value.depends_on ?? 0)
+
+/** 拉取全量关系类型计数（与列表筛选无关，始终反映完整数据） */
+async function loadTypeCounts() {
+  try {
+    const resp = await listModelRelationsApi({ offset: 0, limit: 1000 } as any)
+    const data = resp.data as any
+    const all = data?.data?.relations || data?.relations || []
+    const counts: Record<string, number> = {}
+    for (const r of all) {
+      const t = String(r?.relation_type || '')
+      if (t) counts[t] = (counts[t] || 0) + 1
+    }
+    typeCounts.value = counts
+  } catch {
+    // 统计失败不阻塞列表；保留上一次结果或空对象
+  }
+}
 
 const visiblePages = computed(() => {
   const pages: (number | string)[] = []
@@ -418,6 +448,9 @@ const fetchRelations = async () => {
     const data = response.data as any
     relations.value = data?.data?.relations || data?.relations || []
     pagination.total = data?.data?.total || data?.total || 0
+    // 同步刷新顶部类型统计：它基于全量数据，不随当前页变化。
+    // 放在这里而非各增删改调用点，是为了让所有 refresh 路径自动覆盖（共 8 处调用）。
+    void loadTypeCounts()
   } catch (error) {
     console.error('获取关系列表失败:', error)
     // 记录失败：否则 loading=false + 列表为空 会掉进「暂无模型关系，去创建」空态，误导用户
@@ -531,6 +564,7 @@ const handleDialogClosed = () => {
 onMounted(() => {
   fetchModels()
   fetchRelations()
+  loadTypeCounts()
 })
 </script>
 
