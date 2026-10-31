@@ -1876,4 +1876,16 @@ onUnmounted(() => {
   .header-left {
     flex: 1 0 100%;
   }
+
+  /* 「含子节点」开关：.asset-filters 是单行 flex（下拉 + 开关），768px 下剩余宽度不足以
+     容纳 el-switch 的 active-text，标签被压到 12px 后一字一行（iter126 实测折 4 行）。
+     允许换行，并让开关不参与收缩。 */
+  .asset-filters {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+
+  .asset-filters :deep(.el-switch) {
+    flex-shrink: 0;
+  }
 }</style>
