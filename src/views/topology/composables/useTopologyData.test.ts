@@ -62,7 +62,10 @@ describe('useTopologyData 诚实错误态', () => {
 
         expect(store.dataStatus).toBe('error')
         expect(store.loadError).toContain('拓扑数据加载失败')
-        expect(store.loadError).toContain('Network Error')
+        // 英文传输层文案不再进用户可见消息，映射为中文「网络连接失败」
+        // （原始错误仍由 catch 里的 console.warn 完整保留，供开发者排障）
+        expect(store.loadError).toContain('网络连接失败')
+        expect(store.loadError).not.toContain('Network Error')
         expect(store.loadError).toContain('请刷新重试')
         expect(store.graphData).toBeNull()
         expect(JSON.stringify(store.graphData)).not.toContain('example.com')
