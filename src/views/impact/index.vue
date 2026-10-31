@@ -4,11 +4,26 @@ import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts'
 import { getImpactApi, type ImpactGraph } from '@/api/impact'
 import { listCmdbInstancesApi } from '@/api'
-import { Aim, Search } from '@element-plus/icons-vue'
+import { Aim, Search, WarningFilled } from '@element-plus/icons-vue'
 
 const depth = ref(3)
 const loading = ref(false)
 const graph = ref<ImpactGraph | null>(null)
+/**
+ * 查询类错误态（就地提示，不做整页错误态）。
+ *
+ * 本页是「用户主动发起查询」型页面：失败只意味「这次查询没成功」，
+ * 页面本身仍可用（可改实例/深度再查）。因此不能用整页错误态，
+ * 否则会把搜索框和深度选择一起挡住。
+ *
+ * analyzeError：影响分析请求失败；searchError：实例搜索失败。
+ * 原实现前者只弹 toast 后把 graph 置 null（用户看到空白，分不清
+ * 「没有影响」与「查询失败」）；后者 `catch {}` 完全静默（下拉框空白无提示）。
+ */
+const analyzeError = ref<string | null>(null)
+const searchError = ref<string | null>(null)
+/** 记录上一次搜索词，供错误态「重试」复用 */
+const lastQuery = ref('')
 const chartRef = ref<HTMLDivElement>()
 let chart: echarts.ECharts | null = null
 
@@ -18,13 +33,17 @@ const instanceOptions = ref<Array<{ id: number; asset_name?: string; asset_id: s
 const searchLoading = ref(false)
 
 async function searchInstances(query: string) {
-    if (!query) { instanceOptions.value = []; return }
+    if (!query) { instanceOptions.value = []; searchError.value = null; return }
+    lastQuery.value = query
     searchLoading.value = true
+    searchError.value = null
     try {
         const res = await listCmdbInstancesApi({ asset_name: query, limit: 20 } as any)
         const data = res.data as any
         instanceOptions.value = data?.data?.instances || data?.instances || data?.list || []
     } catch {
+        // 原实现完全静默：搜索失败时下拉框空白，用户会以为「查不到这个实例」
+        searchError.value = '实例搜索失败，请稍后重试'
         instanceOptions.value = []
     } finally {
         searchLoading.value = false
@@ -34,11 +53,13 @@ async function searchInstances(query: string) {
 async function analyze() {
     if (!instanceId.value) { ElMessage.warning('请先搜索并选择实例'); return }
     loading.value = true
+    analyzeError.value = null
     try {
         const resp = await getImpactApi({ instance_id: instanceId.value, depth: depth.value })
         graph.value = resp.data
         renderChart(resp.data)
     } catch (e: any) {
+        analyzeError.value = '影响分析失败，请稍后重试'
         ElMessage.error(e?.message || '影响分析失败')
         graph.value = null
     } finally {
@@ -116,6 +137,20 @@ onBeforeUnmount(() => { window.removeEventListener('resize', onResize); chart?.d
       </el-select>
       <el-input-number v-model="depth" :min="1" :max="10" class="depth-input" />
       <el-button type="primary" :icon="Aim" :loading="loading" @click="analyze">分析</el-button>
+    </div>
+
+    <!-- 搜索失败：就地提示（本页可继续改条件重试，不做整页错误态） -->
+    <div v-if="searchError" class="impact-inline-error" role="alert">
+      <el-icon><WarningFilled /></el-icon>
+      <span>{{ searchError }}</span>
+      <el-button size="small" text @click="searchInstances(lastQuery)">重试</el-button>
+    </div>
+
+    <!-- 分析失败：明确告知「查询失败」，避免与「没有影响」混淆 -->
+    <div v-if="analyzeError" class="impact-inline-error" role="alert">
+      <el-icon><WarningFilled /></el-icon>
+      <span>{{ analyzeError }}</span>
+      <el-button size="small" text @click="analyze">重试</el-button>
     </div>
 
     <div v-if="graph" class="result">
@@ -224,4 +259,17 @@ onBeforeUnmount(() => { window.removeEventListener('resize', onResize); chart?.d
   color: var(--text-tertiary);
   font-size: 14px;
 }
-</style>
+
+/* 查询类就地错误提示：本页是「主动查询」型，失败不阻塞页面，故用行内提示而非整页错误态 */
+.impact-inline-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  font-size: 13px;
+  border-radius: 6px;
+  color: var(--accent-red, #f56c6c);
+  background: rgba(245, 108, 108, 0.1);
+  border: 1px solid rgba(245, 108, 108, 0.3);
+}</style>
