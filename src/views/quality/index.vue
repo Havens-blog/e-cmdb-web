@@ -2,10 +2,12 @@
 import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getOrphanSourcesApi, getQualityOverviewApi, listQualityIssuesApi, type OrphanModelGroup, type QualityIssue, type QualityOverview } from '@/api/quality'
-import { CircleCheck, Warning, Connection, Box, RefreshRight } from '@element-plus/icons-vue'
+import { CircleCheck, Warning, WarningFilled, Connection, Box, RefreshRight } from '@element-plus/icons-vue'
 
 const loading = ref(false)
 const overview = ref<QualityOverview | null>(null)
+/** 质量概览加载失败文案（null = 无错误） */
+const overviewError = ref<string | null>(null)
 const issues = ref<QualityIssue[]>([])
 const total = ref(0)
 const activeType = ref<'orphan_instance' | 'missing_field' | 'dangling_relation' | ''>('')
@@ -45,10 +47,14 @@ const healthColor = computed(() => {
 
 async function loadOverview() {
     loading.value = true
+    overviewError.value = null
     try {
         const resp = await getQualityOverviewApi()
         overview.value = resp.data
     } catch (e: any) {
+        // 概览是整页的核心指标（健康度/孤儿/缺失/悬空），失败时所有卡片都无值。
+        // 仅靠 toast 的话页面会变成一排「0」，用户会误以为「质量很完美」。
+        overviewError.value = '质量概览加载失败'
         ElMessage.error(e?.message || '加载质量概览失败')
     } finally {
         loading.value = false
@@ -108,8 +114,16 @@ onMounted(() => { loadOverview() })
       <el-button class="refresh-btn" :icon="RefreshRight" circle @click="loadOverview" />
     </div>
 
+    <!-- 错误态优先于空态：概览失败时所有指标卡都无值，不能只显示空白 -->
+    <div v-if="!loading && overviewError" class="quality-overview-error" role="alert">
+      <el-icon :size="40"><WarningFilled /></el-icon>
+      <p class="quality-error-title">{{ overviewError }}</p>
+      <p class="quality-error-desc">请稍后重试；若持续失败请联系管理员</p>
+      <el-button size="small" @click="loadOverview">重试</el-button>
+    </div>
+
     <!-- 健康度概览 -->
-    <div class="overview-grid" v-if="overview">
+    <div class="overview-grid" v-else-if="overview">
       <div class="score-card">
         <div class="score-ring" :style="{ borderColor: healthColor, color: healthColor }">
           <span class="score-value">{{ Math.round(overview.health_score) }}</span>
@@ -363,4 +377,28 @@ onMounted(() => { loadOverview() })
   margin-top: 8px;
   font-size: 12px;
   color: var(--text-tertiary);
+}
+/* 质量概览错误态：与 models / relations / instances / dns / audit 的既有错误态保持一致 */
+.quality-overview-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 32px 16px;
+  border-radius: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+}
+
+.quality-error-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent-red, #f56c6c);
+}
+
+.quality-error-desc {
+  margin: 0 0 6px;
+  font-size: 12px;
+  color: var(--text-tertiary, #909399);
 }</style>

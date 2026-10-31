@@ -3,13 +3,15 @@ import { onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { listChangesApi, getChangeSummaryApi, type ChangeRecord, type ChangeSummary } from '@/api/audit'
 import { formatTimestamp } from '@/utils/time'
-import { Search, Timer, RefreshRight } from '@element-plus/icons-vue'
+import { Search, Timer, RefreshRight, WarningFilled } from '@element-plus/icons-vue'
 
 const loading = ref(false)
 const records = ref<ChangeRecord[]>([])
 const total = ref(0)
 /** 后端 total 返回 -1 表示「总数统计超时、不可用」，此时不显示分页器并给出提示 */
 const totalUnknown = ref(false)
+/** 变更列表加载失败文案（null = 无错误）。与 models / relations / instances / dns 的既有错误态一致 */
+const listError = ref<string | null>(null)
 const summary = ref<ChangeSummary | null>(null)
 const summaryLoading = ref(false)
 const summaryFailed = ref(false)
@@ -26,6 +28,7 @@ const providerStats = ref<Array<{ name: string; count: number }>>([])
 
 async function load() {
     loading.value = true
+    listError.value = null
     try {
         const params: Record<string, unknown> = {
             offset: page.value.offset,
@@ -66,6 +69,9 @@ async function loadList(params: Record<string, unknown>) {
         totalUnknown.value = resp.data.total < 0
         total.value = resp.data.total > 0 ? resp.data.total : 0
     } catch (e: any) {
+        // 列表是该页核心：加载失败时若只弹 toast，页面会只剩「暂无变更记录」，
+        // 用户无法区分「接口故障」与「真的没有变更」，也没有重试入口。
+        listError.value = '变更列表加载失败'
         ElMessage.error(e?.message || '加载变更列表失败')
     }
 }
@@ -209,7 +215,15 @@ onMounted(load)
       />
     </div>
 
-    <div v-if="!loading && records.length === 0" class="empty-hint">
+    <!-- 错误态优先于空态：加载失败时若只显示「暂无变更记录」，会误判为「真的没有变更」 -->
+    <div v-if="!loading && listError" class="audit-empty-error" role="alert">
+      <el-icon :size="40"><WarningFilled /></el-icon>
+      <p class="audit-error-title">{{ listError }}</p>
+      <p class="audit-error-desc">请稍后重试；若持续失败请联系管理员</p>
+      <el-button size="small" @click="load()">重试</el-button>
+    </div>
+
+    <div v-else-if="!loading && records.length === 0" class="empty-hint">
       <el-icon :size="40"><Timer /></el-icon>
       <p>暂无变更记录（可输入资产 ID 精确查询）</p>
     </div>
@@ -285,4 +299,25 @@ onMounted(load)
   color: var(--accent-yellow, #e6a23c);
   background: rgba(230, 162, 60, 0.1);
   border: 1px solid rgba(230, 162, 60, 0.25);
+}
+/* 变更列表错误态：与 models / relations / instances / dns 的既有错误态保持一致 */
+.audit-empty-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 32px 16px;
+}
+
+.audit-error-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent-red, #f56c6c);
+}
+
+.audit-error-desc {
+  margin: 0 0 6px;
+  font-size: 12px;
+  color: var(--text-tertiary, #909399);
 }</style>
