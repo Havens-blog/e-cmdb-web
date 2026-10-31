@@ -421,6 +421,9 @@ onMounted(() => {
         margin-top: 2px;
         font-size: 12px;
         color: var(--text-secondary, #909399);
+        /* 短标签（域名总数/记录类型数…）：窄屏下被卡片挤成一字一行。
+           实测自然宽度 12-48px，父卡宽 46-84px，禁止断行即可放下（iter124）。 */
+        white-space: nowrap;
     }
 }
 

@@ -1356,6 +1356,9 @@ onUnmounted(() => {
       font-size: 12px;
       /* 3.3:1 → 次文字色 */
       color: var(--text-secondary);
+      /* 图例标签是 2-3 字短词（计算/网络/数据库…），窄屏下被 .legend-item（44px）挤成
+         一字一行。实测自然宽度仅 12-22px，远小于父宽 38-54px，禁止断行即可（iter124）。 */
+      white-space: nowrap;
     }
 
     .legend-divider {
