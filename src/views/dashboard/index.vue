@@ -257,4 +257,28 @@ onMounted(load)
   font-size: 11px;
   line-height: 1.2;
   color: var(--accent-red, #f56c6c);
+}
+
+// ── 窄屏（≤560px）：两个卡片网格降列 ────────────────────────────────
+// 背景（iter122 实测，390px 视口、侧栏折叠后内容区 278px）：
+//   .stat-grid 是 repeat(4, 1fr) → 每列约 64px，卡内 icon 44px + gap 14 + 箭头 把 .stat-label 压到 27px，
+//     「实例关系」被折成 4 行；
+//   .entry-grid 是 repeat(3, 1fr) → 每列约 85px，卡内 icon 38px 把 .entry-meta 压到 24px，
+//     「资源模型」折 4 行、「追溯每一次配置变更」折 9 行。
+// 窄屏下降列，让每张卡有足够宽度；桌面端不受影响（媒体查询内）。
+@media (max-width: 560px) {
+  .stat-grid {
+    grid-template-columns: repeat(1, 1fr);
+  }
+
+  // 单列下卡片 278px 宽，但卡内仍是 flex 不换行：icon 44px + gap 14px + 箭头 把
+  // .stat-label 压到 27px（「实例关系」折 4 行）。允许换行后文字可获得整行宽度。
+  .stat-card {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+
+  .entry-grid {
+    grid-template-columns: repeat(1, 1fr);
+  }
 }</style>
