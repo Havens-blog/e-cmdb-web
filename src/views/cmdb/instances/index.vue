@@ -243,7 +243,7 @@ import { ManagerHeader } from '@haven/ui/ManagerHeader'
 import { safeTagType, getProviderLabel as getProviderLabelRaw, getProviderLabel as getProviderLabelShared } from '@/utils/constants'
 import { fetchAllRows } from '@/utils/exportAll'
 import { formatTimestamp } from '@/utils/time'
-import { resolveAssetTypeLabel } from '@/utils/assetType'
+import { resolveAssetTypeKey, resolveAssetTypeLabel } from '@/utils/assetType'
 import { buildInstanceListParams } from '@/utils/instanceQuery'
 import { Download, Plus, Refresh, Search, Setting } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -625,7 +625,13 @@ const handleViewDetail = (row: InstanceVO) => {
   // 路由匹配仍按模型前缀推断（e-cam-web 详情页只覆盖少数基础类型）；
   // 但提示文案改用与列表一致的中文模型名，避免同一页面出现
   // 「列表显示快照、点查看提示 snapshot」的不一致（实测存在）。
-  const assetType = row.model_uid?.split('_')[0] || row.model_uid
+  //
+  // 修复（实测 2026-10-31，采样 200 条实例）：原实现用
+  // `model_uid.split('_')[0]` 取类型键，对带厂商前缀的 uid 会取到厂商名：
+  //   aws_eip → "aws"、volcengine_ecs → "volcengine"、aliyun_snapshot → "aliyun"
+  // 结果 200 条里「可查看 0 条、不可查看 200 条」，几乎全部只弹「暂不支持查看」。
+  // 现改用 resolveAssetTypeKey（先剥离厂商前缀再取资源类型）。
+  const assetType = resolveAssetTypeKey(row.model_uid, Object.keys(assetTypeRouteMap))
   const routeInfo = assetTypeRouteMap[assetType]
 
   if (routeInfo) {
