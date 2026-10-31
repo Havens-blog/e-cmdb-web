@@ -185,6 +185,21 @@
             </el-button>
           </template>
         </el-table-column>
+
+        <!--
+          错误态优先于空态：加载失败时表格为空，若只显示默认「暂无数据」，
+          用户会误以为「库里没有资产」，而不是「请求失败了」。
+          与 service-tree / models / relations 的既有做法保持一致。
+        -->
+        <template #empty>
+          <div v-if="loadError" class="table-empty-error" role="alert">
+            <el-icon :size="36"><WarningFilled /></el-icon>
+            <p class="empty-error-title">{{ loadError }}</p>
+            <p class="empty-error-desc">请稍后重试；若持续失败请联系管理员</p>
+            <el-button size="small" @click="fetchInstances">重试</el-button>
+          </div>
+          <div v-else class="table-empty-normal">暂无资产实例</div>
+        </template>
       </el-table>
     </div>
 
@@ -245,7 +260,7 @@ import { fetchAllRows } from '@/utils/exportAll'
 import { formatTimestamp } from '@/utils/time'
 import { resolveAssetTypeKey, resolveAssetTypeLabel } from '@/utils/assetType'
 import { buildInstanceListParams } from '@/utils/instanceQuery'
-import { Download, Plus, Refresh, Search, Setting } from '@element-plus/icons-vue'
+import { Download, Plus, Refresh, Search, Setting, WarningFilled } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute } from 'vue-router'
@@ -288,6 +303,8 @@ const ASSET_TYPE_LABELS: Record<string, string> = {
 
 // 状态
 const loading = ref(false)
+/** 列表加载失败时的持久错误文案（null 表示无错误） */
+const loadError = ref<string | null>(null)
 const submitting = ref(false)
 const dialogVisible = ref(false)
 const isEdit = ref(false)
@@ -471,6 +488,7 @@ const buildListParams = (page: number, size: number): Record<string, any> =>
 // 加载数据
 const fetchInstances = async () => {
   loading.value = true
+  loadError.value = null
   try {
     const res = await listCmdbInstancesApi(buildListParams(pagination.page, pagination.size))
     const data = res.data?.data || res.data
@@ -485,6 +503,10 @@ const fetchInstances = async () => {
     regionOptions.value = Array.from(regions).sort()
   } catch (error) {
     console.error('加载实例列表失败:', error)
+    // 持久错误态：仅靠 ElMessage 的话，toast 几秒后消失，
+    // 页面只剩「暂无数据」空表格，用户无法区分「加载失败」与「真的没有资产」。
+    // 这与 service-tree / models / relations 的既有做法保持一致。
+    loadError.value = '资产实例加载失败'
     ElMessage.error('加载数据失败')
   } finally {
     loading.value = false
@@ -844,4 +866,31 @@ onMounted(() => {
 .filters :deep(.el-select .el-select__placeholder.is-transparent) {
   color: var(--text-secondary);
 }
-</style>
+
+/* 表格空态：错误态（可重试）与正常空态区分展示 */
+.table-empty-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 28px 16px;
+  color: var(--text-secondary, #909399);
+}
+
+.empty-error-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent-red, #f56c6c);
+}
+
+.empty-error-desc {
+  margin: 0 0 6px;
+  font-size: 12px;
+}
+
+.table-empty-normal {
+  padding: 28px 16px;
+  font-size: 13px;
+  color: var(--text-tertiary, #909399);
+}</style>
