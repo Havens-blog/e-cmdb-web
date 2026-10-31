@@ -15,11 +15,46 @@ const instanceCount = ref(0)
 const relationCount = ref(0)
 const quality = ref<QualityOverview | null>(null)
 
+/**
+ * 各统计项的加载失败标记（局部降级用）。
+ *
+ * 仪表盘 4 个卡片各自独立请求，任一失败时**不能整页报错**（其余卡片仍然有效），
+ * 也**不能显示 0**（那是错误数据）。故失败项显示「—」并在悬停提示中说明。
+ */
+const modelFailed = ref(false)
+const instanceFailed = ref(false)
+const relationFailed = ref(false)
+const qualityFailed = ref(false)
+
 const stats = computed(() => [
-    { label: '资源模型', value: modelCount.value, icon: Grid, color: 'var(--accent-blue)', path: '/models' },
-    { label: '资源实例', value: instanceCount.value, icon: Box, color: 'var(--accent-cyan)', path: '/instances' },
-    { label: '实例关系', value: relationCount.value, icon: Connection, color: 'var(--accent-purple)', path: '/relations' },
-    { label: '数据健康度', value: quality.value ? `${Math.round(quality.value.health_score)}%` : '—', icon: CircleCheck, color: 'var(--accent-green)', path: '/quality' },
+    {
+        label: '资源模型',
+        value: modelFailed.value ? '—' : modelCount.value,
+        failed: modelFailed.value,
+        tip: modelFailed.value ? '资源模型数量加载失败' : '',
+        icon: Grid, color: 'var(--accent-blue)', path: '/models',
+    },
+    {
+        label: '资源实例',
+        value: instanceFailed.value ? '—' : instanceCount.value,
+        failed: instanceFailed.value,
+        tip: instanceFailed.value ? '资源实例数量加载失败' : '',
+        icon: Box, color: 'var(--accent-cyan)', path: '/instances',
+    },
+    {
+        label: '实例关系',
+        value: relationFailed.value ? '—' : relationCount.value,
+        failed: relationFailed.value,
+        tip: relationFailed.value ? '实例关系数量加载失败' : '',
+        icon: Connection, color: 'var(--accent-purple)', path: '/relations',
+    },
+    {
+        label: '数据健康度',
+        value: qualityFailed.value ? '—' : (quality.value ? `${Math.round(quality.value.health_score)}%` : '—'),
+        failed: qualityFailed.value,
+        tip: qualityFailed.value ? '数据健康度加载失败' : '',
+        icon: CircleCheck, color: 'var(--accent-green)', path: '/quality',
+    },
 ])
 
 const entries = [
@@ -33,6 +68,11 @@ const entries = [
 
 async function load() {
     loading.value = true
+    // 每项独立标记加载失败，用于卡片局部降级（显示「—」而不是错误的 0）
+    modelFailed.value = false
+    instanceFailed.value = false
+    relationFailed.value = false
+    qualityFailed.value = false
     try {
         const [models, instances, relations, q] = await Promise.allSettled([
             listCmdbModelsApi({ limit: 1 }),
@@ -40,10 +80,29 @@ async function load() {
             listInstanceRelationsApi({ limit: 1 } as any),
             getQualityOverviewApi(),
         ])
-        if (models.status === 'fulfilled') modelCount.value = (models.value as any)?.data?.total ?? 0
-        if (instances.status === 'fulfilled') instanceCount.value = (instances.value as any)?.data?.total ?? 0
-        if (relations.status === 'fulfilled') relationCount.value = (relations.value as any)?.data?.data?.total ?? (relations.value as any)?.data?.total ?? 0
-        if (q.status === 'fulfilled') quality.value = (q.value as any)?.data ?? null
+        // allSettled 保证单项失败不影响其它卡片，但**必须显式标记失败项**。
+        // 原实现在失败分支什么都不做，卡片停留在初始值 0，
+        // 用户看到「0 资源模型 / 0 资源实例」——这是错误数据，比不显示更糟。
+        if (models.status === 'fulfilled') {
+            modelCount.value = (models.value as any)?.data?.total ?? 0
+        } else {
+            modelFailed.value = true
+        }
+        if (instances.status === 'fulfilled') {
+            instanceCount.value = (instances.value as any)?.data?.total ?? 0
+        } else {
+            instanceFailed.value = true
+        }
+        if (relations.status === 'fulfilled') {
+            relationCount.value = (relations.value as any)?.data?.data?.total ?? (relations.value as any)?.data?.total ?? 0
+        } else {
+            relationFailed.value = true
+        }
+        if (q.status === 'fulfilled') {
+            quality.value = (q.value as any)?.data ?? null
+        } else {
+            qualityFailed.value = true
+        }
     } finally {
         loading.value = false
     }
@@ -63,13 +122,22 @@ onMounted(load)
 
     <!-- 统计卡片 -->
     <div class="stat-grid">
-      <div v-for="s in stats" :key="s.label" class="stat-card" @click="router.push(s.path)">
+      <div
+        v-for="s in stats"
+        :key="s.label"
+        class="stat-card"
+        :class="{ 'stat-card--failed': s.failed }"
+        :title="s.tip || undefined"
+        @click="router.push(s.path)"
+      >
         <div class="stat-icon" :style="{ color: s.color }">
           <el-icon :size="22"><component :is="s.icon" /></el-icon>
         </div>
         <div class="stat-meta">
           <div class="stat-value">{{ s.value }}</div>
           <div class="stat-label">{{ s.label }}</div>
+          <!-- 局部降级：单项加载失败时明确告知，而不是显示错误的 0 -->
+          <div v-if="s.failed" class="stat-failed-hint">加载失败</div>
         </div>
         <el-icon class="stat-arrow"><ArrowRight /></el-icon>
       </div>
@@ -173,4 +241,20 @@ onMounted(load)
 .entry-label { font-size: 14px; font-weight: 500; }
 .entry-desc { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
 .entry-arrow { color: var(--text-tertiary); margin-left: auto; font-size: 13px; }
-</style>
+
+/* 统计卡片局部降级：单项加载失败时用虚线边框 + 提示文字区分，数值显示「—」 */
+.stat-card--failed {
+  border-style: dashed;
+  border-color: rgba(245, 108, 108, 0.45);
+
+  .stat-value {
+    color: var(--text-tertiary, #909399);
+  }
+}
+
+.stat-failed-hint {
+  margin-top: 2px;
+  font-size: 11px;
+  line-height: 1.2;
+  color: var(--accent-red, #f56c6c);
+}</style>
