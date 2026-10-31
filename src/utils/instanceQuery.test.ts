@@ -32,7 +32,11 @@ describe('buildInstanceListParams', () => {
             1,
             10
         )
-        expect(p.keyword).toBe('web')
+        // 注意：后端实例列表的模糊搜索参数名是 asset_name（DAO 用
+        // $regex + $options:"i" 对 asset_name 做不区分大小写的包含匹配），
+        // 发 keyword 会被后端忽略（实测 2026-10-31：带 keyword 仍返回全量）。
+        expect(p.asset_name).toBe('web')
+        expect(p.keyword).toBeUndefined()
         expect(p.provider).toBe('aliyun')
         expect(p.region).toBe('cn-hangzhou')
     })
