@@ -42,7 +42,12 @@ export function buildInstanceListParams(
         offset: (page - 1) * size,
         limit: size,
     }
-    if (filters.keyword) params.keyword = filters.keyword
+    // 搜索关键字：后端实例列表接口的模糊匹配参数名是 asset_name（DAO 用
+    // $regex + $options:"i" 对 asset_name 做不区分大小写的包含匹配），
+    // **不是 keyword**。此前这里发 keyword，后端完全忽略，导致
+    // 33049 条实例下搜索框形同虚设（实测 2026-10-31：带 keyword 请求
+    // 仍返回全量 total=33049）。此处改发 asset_name 以接通后端能力。
+    if (filters.keyword) params.asset_name = filters.keyword
     if (filters.provider) params.provider = filters.provider
     if (filters.region) params.region = filters.region
 
