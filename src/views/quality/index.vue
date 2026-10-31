@@ -293,7 +293,7 @@ onMounted(() => { loadOverview() })
 }
 
 .metric-value { font-size: 26px; font-weight: 600; line-height: 1; }
-.metric-label { font-size: 12px; color: var(--text-secondary); }
+.metric-label { font-size: 12px; color: var(--text-secondary); white-space: nowrap; }
 
 .issues-head { margin-bottom: 12px; }
 .section-title { font-size: 15px; font-weight: 600; margin: 0; display: flex; align-items: center; gap: 10px; }

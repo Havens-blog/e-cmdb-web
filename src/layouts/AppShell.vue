@@ -258,12 +258,18 @@ $sidebar-collapsed-width: 64px;
         }
 
         // 折叠态下这些文字节点仍会渲染（模板用 appStore.sidebarCollapsed 控制，
-        // 与纯 CSS 折叠无关），必须一并隐藏，否则会溢出 64px 的图标栏
+        // 与纯 CSS 折叠无关），必须一并隐藏，否则会溢出 64px 的图标栏。
+        // 注意：下方 `.sidebar-logo .logo-wordmark { display: flex }` 与本规则同特异性且更靠后，
+        // 会覆盖 `display:none`（iter124 实测：折叠后 logo 区「息壤」仍竖排、XIRANG CLOUD 被裁切）。
+        // 故这里对 wordmark 提高一级特异性。
         .menu-title,
         .menu-group-title,
-        .logo-wordmark,
         .tenant-text,
         .user-label {
+            display: none;
+        }
+
+        .sidebar-logo .logo-wordmark {
             display: none;
         }
     }

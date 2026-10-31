@@ -233,10 +233,20 @@
   border-bottom: 1px solid var(--border-subtle);
   font-size: 12px;
   font-weight: 600;
-  /* tertiary 在 --bg-hover 底上仅 2.55:1（AA 需 4.5）→ 次文字色 */
+  /* 3.02:1 → 次文字色 */
   color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+
+  /* 窄屏（≤560px）：7 列网格最小需 360px 固定宽度，而容器仅 276px →
+     2fr 1fr 1fr 三列塌成 12px，「源模型」「目标模型」被折成 3-4 行（iter124）。
+     窄屏改为 2 列，让每个单元格获得可用宽度。 */
+  @media (max-width: 560px) {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 12px;
+    letter-spacing: 0;
+  }
 }
 
 .relation-item {
@@ -250,6 +260,13 @@
 
   &:last-child { border-bottom: none; }
   &:hover { background: var(--bg-hover); }
+
+  /* 与 .list-header 同构：窄屏 7 列放不下（容器 276px），改 2 列保持与表头对齐（iter124）。 */
+  @media (max-width: 560px) {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 12px;
+  }
 }
 
 .col-relation {
@@ -391,6 +408,10 @@
     font-size: 14px;
     /* 3.02:1 → 次文字色 */
     color: var(--text-secondary);
+    /* 窄屏下 .pagination-bar 是 flex 单行，本元素被压到 16px（「共」一行、数字一行…共 5 行）。
+       文字自然宽约 90px 而栏宽 278px，禁止断行 + 不参与收缩即可（iter124）。 */
+    white-space: nowrap;
+    flex-shrink: 0;
     strong { color: var(--text-primary); font-weight: 600; }
   }
 
