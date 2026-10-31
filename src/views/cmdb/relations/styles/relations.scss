@@ -11,6 +11,18 @@
     justify-content: space-between;
     align-items: flex-start;
     gap: 24px;
+
+    /* 窄屏（≤560px）：页头竖排，标题不再被右侧动作组挤压。
+       实测（iter123，390px、内容区 278px）：单行 flex + space-between 下
+       .header-info（标题+副标题）只分到 52px，「模型关系」被折成 4 行。 */
+    @media (max-width: 560px) {
+      flex-wrap: wrap;
+      gap: 12px;
+
+      .header-info {
+        flex: 1 0 100%;
+      }
+    }
   }
 
   .header-info {

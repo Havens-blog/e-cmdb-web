@@ -408,4 +408,18 @@ onMounted(() => {
   padding: 24px 12px;
   font-size: 13px;
   color: var(--text-tertiary, #909399);
+}
+
+// ── 窄屏（≤560px）：页头竖排，标题不再被右侧动作组挤压 ──────────────────
+// 实测（iter123，390px、内容区 278px）：.page-header 单行 flex + space-between，
+// 左侧 .header-left 只分到 128px，「环境管理」仍被折成 4 行。
+@media (max-width: 560px) {
+  .environments-page .page-header {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .environments-page .page-header .header-left {
+    flex: 1 0 100%;
+  }
 }</style>
