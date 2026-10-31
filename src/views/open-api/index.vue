@@ -14,17 +14,27 @@ const activeTab = ref<'tokens' | 'webhooks'>('tokens')
 // ==================== Token ====================
 const tokens = ref<ApiToken[]>([])
 const tokenLoading = ref(false)
+/**
+ * 两个 tab 各自的加载失败文案（null = 无错误）。
+ *
+ * 本页两个 tab 数据独立（Token / Webhook），任一侧失败不应影响另一侧，
+ * 故按 tab 分别维护错误态，而非整页错误态。
+ */
+const tokenError = ref<string | null>(null)
+const webhookError = ref<string | null>(null)
 const tokenDialogVisible = ref(false)
 const tokenForm = ref({ name: '', ttl_days: 30, scopes: ['read', 'write'] })
 const createdToken = ref('')
 
 async function loadTokens() {
     tokenLoading.value = true
+    tokenError.value = null
     try {
         const resp = await listTokensApi({ limit: 100 })
         tokens.value = resp.data.items
     } catch (e: any) {
-        ElMessage.error(e?.message || '加载 Token 失败')
+        tokenError.value = 'Token 列表加载失败'
+    ElMessage.error(e?.message || '加载 Token 失败')
     } finally {
         tokenLoading.value = false
     }
@@ -84,10 +94,12 @@ const eventOptions = [
 
 async function loadWebhooks() {
     webhookLoading.value = true
+    webhookError.value = null
     try {
         const resp = await listWebhooksApi({ limit: 100 })
         webhooks.value = resp.data.items
     } catch (e: any) {
+        webhookError.value = 'Webhook 列表加载失败'
         ElMessage.error(e?.message || '加载 Webhook 失败')
     } finally {
         webhookLoading.value = false
@@ -197,6 +209,16 @@ onMounted(() => { loadTokens(); loadWebhooks() })
               <el-button v-if="row.status === 'active'" type="danger" link :icon="Delete" @click="handleRevokeToken(row)">吊销</el-button>
             </template>
           </el-table-column>
+
+          <!-- 错误态优先于空态：加载失败时若只显示「暂无数据」，会误判为「真的没有 Token」 -->
+          <template #empty>
+            <div v-if="tokenError" class="api-empty-error" role="alert">
+              <p class="api-error-title">{{ tokenError }}</p>
+              <p class="api-error-desc">请稍后重试；若持续失败请联系管理员</p>
+              <el-button size="small" @click="loadTokens">重试</el-button>
+            </div>
+            <div v-else class="api-empty-normal">暂无 API Token</div>
+          </template>
         </el-table>
       </el-tab-pane>
 
@@ -226,6 +248,16 @@ onMounted(() => { loadTokens(); loadWebhooks() })
               <el-button type="danger" link :icon="Delete" @click="handleDeleteWebhook(row)">删除</el-button>
             </template>
           </el-table-column>
+
+          <!-- 错误态优先于空态：与 Token tab 独立，一侧失败不影响另一侧 -->
+          <template #empty>
+            <div v-if="webhookError" class="api-empty-error" role="alert">
+              <p class="api-error-title">{{ webhookError }}</p>
+              <p class="api-error-desc">请稍后重试；若持续失败请联系管理员</p>
+              <el-button size="small" @click="loadWebhooks">重试</el-button>
+            </div>
+            <div v-else class="api-empty-normal">暂无 Webhook 订阅</div>
+          </template>
         </el-table>
       </el-tab-pane>
     </el-tabs>
@@ -309,4 +341,31 @@ onMounted(() => { loadTokens(); loadWebhooks() })
 
   code { flex: 1; font-size: 12px; word-break: break-all; color: var(--accent-blue); font-family: var(--font-mono); }
 }
-</style>
+
+/* 两个 tab 各自的错误态：与 models / relations / instances / dns / audit / quality 保持一致 */
+.api-empty-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 28px 12px;
+}
+
+.api-error-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-red, #f56c6c);
+}
+
+.api-error-desc {
+  margin: 0 0 6px;
+  font-size: 12px;
+  color: var(--text-tertiary, #909399);
+}
+
+.api-empty-normal {
+  padding: 28px 12px;
+  font-size: 13px;
+  color: var(--text-tertiary, #909399);
+}</style>
