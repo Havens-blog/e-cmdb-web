@@ -34,6 +34,8 @@ const RECORD_TYPE_OPTIONS = ['A', 'AAAA', 'CNAME', 'MX', 'TXT', 'NS', 'SRV', 'CA
 const domains = ref<DnsDomain[]>([])
 const domainsLoading = ref(false)
 const domainTotal = ref(0)
+/** 域名列表加载失败文案（null = 无错误） */
+const domainsError = ref<string | null>(null)
 const domainQuery = reactive({ keyword: '', provider: '', offset: 0, limit: 50 })
 
 // 统计
@@ -44,6 +46,8 @@ const activeDomain = ref('')
 const records = ref<DnsRecord[]>([])
 const recordsLoading = ref(false)
 const recordTotal = ref(0)
+/** 解析记录加载失败文案（null = 无错误） */
+const recordsError = ref<string | null>(null)
 const recordQuery = reactive({
     keyword: '',
     record_type: '',
@@ -76,6 +80,7 @@ async function loadStats() {
 
 async function loadDomains() {
     domainsLoading.value = true
+    domainsError.value = null
     try {
         const resp = await getDnsDomainsApi({
             keyword: domainQuery.keyword || undefined,
@@ -92,6 +97,9 @@ async function loadDomains() {
             await selectDomain(first.domain_name)
         }
     } catch (e: any) {
+        // 持久错误态：仅靠 ElMessage 的话 toast 几秒后消失，
+        // 左侧只剩「暂无域名」，用户无法区分「加载失败」与「真的没有域名」。
+        domainsError.value = '域名列表加载失败'
         ElMessage.error(e?.message || '加载域名列表失败')
     } finally {
         domainsLoading.value = false
@@ -110,6 +118,7 @@ async function selectDomain(domainName: string) {
 async function loadRecords() {
     if (!activeDomain.value) return
     recordsLoading.value = true
+    recordsError.value = null
     try {
         const resp = await getDnsRecordsApi(activeDomain.value, {
             keyword: recordQuery.keyword || undefined,
@@ -121,6 +130,8 @@ async function loadRecords() {
         records.value = data?.items || []
         recordTotal.value = data?.total || 0
     } catch (e: any) {
+        // 同上：记录面板也要有持久错误态，避免「暂无解析记录」误导读数
+        recordsError.value = '解析记录加载失败'
         ElMessage.error(e?.message || '加载解析记录失败')
         records.value = []
         recordTotal.value = 0
@@ -258,7 +269,13 @@ onMounted(() => {
                             <span class="record-count">{{ d.record_count }} 条</span>
                         </div>
                     </div>
-                    <el-empty v-if="!domainsLoading && domains.length === 0" description="暂无域名" :image-size="60" />
+                    <!-- 错误态优先于空态：加载失败时若只显示「暂无域名」，会误判为「真的没有域名」 -->
+                    <div v-if="!domainsLoading && domainsError" class="dns-empty-error" role="alert">
+                        <p class="dns-error-title">{{ domainsError }}</p>
+                        <p class="dns-error-desc">请稍后重试；若持续失败请联系管理员</p>
+                        <el-button size="small" @click="loadDomains">重试</el-button>
+                    </div>
+                    <el-empty v-else-if="!domainsLoading && domains.length === 0" description="暂无域名" :image-size="60" />
                 </div>
                 <el-pagination
                     v-if="domainTotal > domainQuery.limit"
@@ -332,6 +349,16 @@ onMounted(() => {
                     <el-table-column label="云厂商" width="90">
                         <template #default="{ row }">{{ getProviderLabel(row.provider) }}</template>
                     </el-table-column>
+
+                    <!-- 错误态优先于空态 -->
+                    <template #empty>
+                        <div v-if="recordsError" class="dns-empty-error" role="alert">
+                            <p class="dns-error-title">{{ recordsError }}</p>
+                            <p class="dns-error-desc">请稍后重试；若持续失败请联系管理员</p>
+                            <el-button size="small" @click="loadRecords">重试</el-button>
+                        </div>
+                        <div v-else class="dns-empty-normal">暂无解析记录</div>
+                    </template>
                 </el-table>
 
                 <el-pagination
@@ -472,4 +499,31 @@ onMounted(() => {
         color: var(--text-secondary, #909399);
     }
 }
-</style>
+
+/* DNS 页错误态：与 models / relations / instances 的既有错误态保持一致 */
+.dns-empty-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 24px 12px;
+}
+
+.dns-error-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-red, #f56c6c);
+}
+
+.dns-error-desc {
+  margin: 0 0 6px;
+  font-size: 12px;
+  color: var(--text-tertiary, #909399);
+}
+
+.dns-empty-normal {
+  padding: 24px 12px;
+  font-size: 13px;
+  color: var(--text-tertiary, #909399);
+}</style>
