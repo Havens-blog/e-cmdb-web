@@ -238,10 +238,11 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
 
-  /* 窄屏（≤560px）：7 列网格最小需 360px 固定宽度，而容器仅 276px →
-     2fr 1fr 1fr 三列塌成 12px，「源模型」「目标模型」被折成 3-4 行（iter124）。
-     窄屏改为 2 列，让每个单元格获得可用宽度。 */
-  @media (max-width: 560px) {
+  /* 窄屏（≤768px）：7 列网格含 360px 固定列（100+100+100+60），
+     390px 容器 276px 时 2fr 1fr 1fr 塌成 12px；768px 容器约 480px 时也只能分到 40/20/20px，
+     「源模型」「目标模型」都被折成 3-4 行（iter124/iter126 实测）。
+     故断点放宽到 768px，改为 2 列让每个单元格获得可用宽度。 */
+  @media (max-width: 768px) {
     grid-template-columns: 1fr 1fr;
     gap: 8px;
     padding: 12px;
@@ -261,8 +262,9 @@
   &:last-child { border-bottom: none; }
   &:hover { background: var(--bg-hover); }
 
-  /* 与 .list-header 同构：窄屏 7 列放不下（容器 276px），改 2 列保持与表头对齐（iter124）。 */
-  @media (max-width: 560px) {
+  /* 与 .list-header 同构：窄屏 7 列放不下（390px 容器 276px / 768px 容器约 480px 都分不到可用宽度），
+     改 2 列保持与表头对齐（iter124/iter126）。 */
+  @media (max-width: 768px) {
     grid-template-columns: 1fr 1fr;
     gap: 8px;
     padding: 12px;
