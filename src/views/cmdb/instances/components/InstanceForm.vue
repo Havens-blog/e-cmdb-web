@@ -44,7 +44,61 @@
       />
     </el-form-item>
 
-    <el-divider content-position="left">动态属性</el-divider>
+    <!--
+      按模型定义渲染字段。
+      背景：此前选中模型后不渲染该模型的任何字段，用户必须手动输入「属性名/属性值」，
+      即使模型已定义 hostname / ip_address / status 等字段也看不到。
+      这里仅解决「有定义却不能让用户填」的展示问题，值仍写入同一个 attributes。
+    -->
+    <template v-if="visibleAttrs.length">
+      <el-divider content-position="left">
+        模型字段
+        <span v-if="attrsLoading" class="attr-loading">（加载中…）</span>
+      </el-divider>
+
+      <el-form-item
+        v-for="a in visibleAttrs"
+        :key="a.field_uid"
+        :label="a.display_name || a.field_name || a.field_uid"
+      >
+        <!-- 枚举：下拉选择 -->
+        <el-select
+          v-if="a.field_type === 'enum' && enumOptions(a).length"
+          v-model="attrValues[a.field_uid]"
+          :placeholder="a.placeholder || '请选择'"
+          clearable
+          style="width: 100%"
+        >
+          <el-option v-for="opt in enumOptions(a)" :key="opt" :label="opt" :value="opt" />
+        </el-select>
+
+        <!-- 布尔：开关 -->
+        <el-switch
+          v-else-if="a.field_type === 'bool'"
+          :model-value="attrValues[a.field_uid] === 'true'"
+          @update:model-value="(v: any) => (attrValues[a.field_uid] = String(v))"
+        />
+
+        <!-- 数字 -->
+        <el-input
+          v-else-if="a.field_type === 'int' || a.field_type === 'float'"
+          v-model="attrValues[a.field_uid]"
+          type="number"
+          :placeholder="a.placeholder || `请输入${a.display_name || a.field_uid}`"
+        />
+
+        <!-- 其余（string / datetime / json / array / link）：文本输入 -->
+        <el-input
+          v-else
+          v-model="attrValues[a.field_uid]"
+          :placeholder="a.placeholder || `请输入${a.display_name || a.field_uid}`"
+        />
+
+        <div v-if="a.description" class="attr-desc">{{ a.description }}</div>
+      </el-form-item>
+    </template>
+
+    <el-divider content-position="left">其他属性（手动填写）</el-divider>
 
     <div class="attributes-editor">
       <div v-for="(attr, index) in attributeList" :key="index" class="attr-row">
@@ -64,10 +118,12 @@
 
 <script setup lang="ts">
 import { createCmdbInstanceApi, updateCmdbInstanceApi } from '@/api'
-import type { InstanceVO, ModelVO } from '@/api/types/cmdb'
+// listAttributesApi 未纳入 @/api 桶导出（桶仅 re-export 页面曾用到的函数），按需从模块直接引入
+import { listAttributesApi } from '@/api/cmdb'
+import type { AttributeVO, InstanceVO, ModelVO } from '@/api/types/cmdb'
 import { Delete, Plus } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
-import { reactive, ref, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 
 const props = defineProps<{
   instance: InstanceVO | null
@@ -87,6 +143,80 @@ const form = reactive({
 })
 
 const attributeList = ref<{ key: string; value: string }[]>([])
+
+/**
+ * 当前模型已定义的字段（用于按定义渲染输入项）。
+ *
+ * 背景（实测 2026-11-01）：
+ * 原表单选中模型后**完全不渲染该模型的字段**，只有一个「动态属性」区，
+ * 要求用户手动输入「属性名 / 属性值」。实测选「主机」模型后，
+ * hostname / ip_address / status / os_type 一个都没有出现，
+ * 用户必须自己知道字段名才能填。
+ *
+ * 本改动只解决「有字段定义却不让用户填」的展示问题：
+ * 按 field_type 渲染对应控件，值仍然写入同一个 attributes map，
+ * **不改变任何数据语义，也不新增校验**（校验强度需产品决策，另行确认）。
+ */
+const modelAttrs = ref<AttributeVO[]>([])
+const attrsLoading = ref(false)
+
+/** 按字段定义顺序、仅取可显示字段 */
+const visibleAttrs = computed(() =>
+  modelAttrs.value
+    .filter((a) => a.display !== false)
+    .slice()
+    .sort((a, b) => (a.index ?? 0) - (b.index ?? 0))
+)
+
+/** 字段值：统一存字符串，提交时按 type 还原 */
+const attrValues = reactive<Record<string, string>>({})
+
+/** enum 字段的候选项（后端 option 可能是数组或 JSON 字符串） */
+const enumOptions = (attr: AttributeVO): string[] => {
+  const raw = attr.option
+  if (!raw) return []
+  try {
+    const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw
+    if (Array.isArray(parsed)) return parsed.map((x) => String(x))
+    if (parsed && typeof parsed === 'object') return Object.keys(parsed)
+  } catch {
+    /* 非法 JSON 时降级为空，交由自由输入 */
+  }
+  return []
+}
+
+/** 拉取某个模型的字段定义 */
+const loadModelAttrs = async (modelUid: string) => {
+  modelAttrs.value = []
+  if (!modelUid) return
+  attrsLoading.value = true
+  try {
+    const resp = await listAttributesApi(modelUid, { limit: 200 })
+    const data = (resp.data as any)?.data || resp.data
+    modelAttrs.value = data?.attributes || data?.items || []
+    // 用字段默认值初始化未填项
+    for (const a of modelAttrs.value) {
+      if (attrValues[a.field_uid] === undefined && a.default) {
+        attrValues[a.field_uid] = String(a.default)
+      }
+    }
+  } catch {
+    // 字段定义拉取失败不阻塞表单：退化为原有的手动「动态属性」录入
+    modelAttrs.value = []
+  } finally {
+    attrsLoading.value = false
+  }
+}
+
+// 模型切换时重新加载字段定义
+watch(
+  () => form.uid,
+  (uid) => {
+    // 清掉上一模型的字段值，避免串模型
+    for (const k of Object.keys(attrValues)) delete attrValues[k]
+    void loadModelAttrs(uid)
+  }
+)
 
 const rules: FormRules = {
   uid: [{ required: true, message: '请选择模型', trigger: 'change' }],
@@ -120,6 +250,10 @@ watch(
           key,
           value: typeof value === 'object' ? JSON.stringify(value) : String(value),
         }))
+        // 同时把已有值回填到「按定义渲染」的字段上（供编辑时直接修改）
+        for (const [k, v] of Object.entries(val.attributes)) {
+          attrValues[k] = typeof v === 'object' ? JSON.stringify(v) : String(v)
+        }
       } else {
         attributeList.value = []
       }
@@ -140,6 +274,15 @@ const removeAttribute = (index: number) => {
 
 const buildAttributes = () => {
   const attrs: Record<string, any> = {}
+
+  // 1) 按模型定义渲染的字段：按 field_type 还原类型后写入
+  for (const a of visibleAttrs.value) {
+    const raw = attrValues[a.field_uid]
+    if (raw === undefined || raw === null || String(raw).trim() === '') continue
+    attrs[a.field_uid] = coerceByType(String(raw), a.field_type)
+  }
+
+  // 2) 手动「动态属性」：保留原行为（显式填写的优先，可覆盖上面的同名项）
   attributeList.value.forEach(({ key, value }) => {
     if (key.trim()) {
       // 尝试解析 JSON
@@ -151,6 +294,39 @@ const buildAttributes = () => {
     }
   })
   return attrs
+}
+
+/**
+ * 按字段类型把字符串形式的输入还原为对应类型。
+ *
+ * 只做「明显无损」的转换：数字型能解析才转，否则保留原字符串，
+ * 避免把用户输入静默变成 NaN 或被丢弃。
+ * 注意：这里**不做合法性拦截**（如必填、枚举越界），
+ * 校验强度属产品决策，需另行确认后实现。
+ */
+function coerceByType(value: string, fieldType: string): any {
+  const t = (fieldType || '').toLowerCase()
+  if (t === 'int') {
+    const n = Number(value)
+    return Number.isFinite(n) ? Math.trunc(n) : value
+  }
+  if (t === 'float') {
+    const n = Number(value)
+    return Number.isFinite(n) ? n : value
+  }
+  if (t === 'bool') {
+    if (value === 'true' || value === '1') return true
+    if (value === 'false' || value === '0') return false
+    return value
+  }
+  if (t === 'json' || t === 'array') {
+    try {
+      return JSON.parse(value)
+    } catch {
+      return value
+    }
+  }
+  return value
 }
 
 /**
@@ -221,4 +397,18 @@ defineExpose({ submit, reset, validate })
     }
   }
 }
-</style>
+
+/* 按模型定义渲染的字段：说明文字与加载态 */
+.attr-desc {
+  width: 100%;
+  margin-top: 2px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-tertiary, #909399);
+}
+
+.attr-loading {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-tertiary, #909399);
+}</style>
