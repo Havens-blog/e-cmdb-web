@@ -8,6 +8,8 @@ import { Search, Timer, RefreshRight } from '@element-plus/icons-vue'
 const loading = ref(false)
 const records = ref<ChangeRecord[]>([])
 const total = ref(0)
+/** 后端 total 返回 -1 表示「总数统计超时、不可用」，此时不显示分页器并给出提示 */
+const totalUnknown = ref(false)
 const summary = ref<ChangeSummary | null>(null)
 const summaryLoading = ref(false)
 const summaryFailed = ref(false)
@@ -54,7 +56,15 @@ async function loadList(params: Record<string, unknown>) {
     try {
         const resp = await listChangesApi(params as any)
         records.value = resp.data.items
-        total.value = resp.data.total
+        // total = -1 表示后端「统计总数超时，无法给出准确值」。
+        //
+        // 背景（实测 2026-10-31）：ecam_change_history 有 540 万条，
+        // 按 field_name 筛选时该字段无索引，CountDocuments 全表扫需 >30 秒
+        // 乃至 Mongo 断连导致接口 500。后端已改为：列表数据照常返回，total 返回 -1。
+        // 此处归一为 0 让分页器隐藏（其 v-if="total > 0"），
+        // 同时用 totalUnknown 标记，在页面上明确提示，而不是静默隐藏分页。
+        totalUnknown.value = resp.data.total < 0
+        total.value = resp.data.total > 0 ? resp.data.total : 0
     } catch (e: any) {
         ElMessage.error(e?.message || '加载变更列表失败')
     }
@@ -185,6 +195,10 @@ onMounted(load)
       </el-table-column>
     </el-table>
 
+    <div v-if="totalUnknown" class="total-unknown-tip">
+      当前筛选下无法统计总条数（数据量过大、聚合超时），列表数据不受影响
+    </div>
+
     <div v-if="total > 0" class="pagination">
       <el-pagination
         layout="total, prev, pager, next"
@@ -262,4 +276,13 @@ onMounted(load)
   color: var(--text-tertiary);
   font-size: 14px;
 }
-</style>
+
+.total-unknown-tip {
+  margin: 8px 0 4px;
+  padding: 6px 10px;
+  font-size: 12px;
+  border-radius: 6px;
+  color: var(--accent-yellow, #e6a23c);
+  background: rgba(230, 162, 60, 0.1);
+  border: 1px solid rgba(230, 162, 60, 0.25);
+}</style>
