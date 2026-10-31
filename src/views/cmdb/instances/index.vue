@@ -175,8 +175,11 @@
             <template v-else>-</template>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="120" fixed="right">
+        <el-table-column label="操作" width="170" fixed="right">
           <template #default="{ row }">
+            <el-button type="primary" link size="small" @click.stop="handleEdit(row)">
+              编辑
+            </el-button>
             <el-button type="primary" link size="small" @click.stop="handleViewDetail(row)">
               查看
             </el-button>
@@ -671,6 +674,25 @@ const handleViewDetail = (row: InstanceVO) => {
 const handleAdd = () => {
   isEdit.value = false
   currentInstance.value = null
+  dialogVisible.value = true
+}
+
+/**
+ * 编辑既有实例。
+ *
+ * 缺陷修复（实测 2026-11-01）：
+ * 此前 `isEdit.value = true` 在整个文件里**从未出现**，
+ * `currentInstance` 也只在新建时被置为 null。
+ * 即 InstanceForm 里完整的「编辑实例」逻辑（含 `updateCmdbInstanceApi` 调用、
+ * 「编辑实例」标题、「更新成功」提示）**没有任何入口能触发** ——
+ * 用户能新建、能删除，唯独不能修改已录入的实例。
+ *
+ * 后端 `PUT /cmdb/instances/:id` 与表单的更新逻辑都是现成的，
+ * 本函数只是把断掉的入口接回去，不改变任何更新语义。
+ */
+const handleEdit = (row: InstanceVO) => {
+  isEdit.value = true
+  currentInstance.value = row
   dialogVisible.value = true
 }
 
