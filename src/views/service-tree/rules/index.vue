@@ -121,6 +121,20 @@
               </el-button>
             </template>
           </el-table-column>
+
+          <!--
+            错误态优先于空态：加载失败时若只显示「暂无数据」，
+            用户会误以为「真的没有绑定规则」，而不是「请求失败了」。
+            与 models / relations / instances / dns / audit / quality / environments 一致。
+          -->
+          <template #empty>
+            <div v-if="loadError" class="rule-empty-error" role="alert">
+              <p class="rule-error-title">{{ loadError }}</p>
+              <p class="rule-error-desc">请稍后重试；若持续失败请联系管理员</p>
+              <el-button size="small" @click="loadRules">重试</el-button>
+            </div>
+            <div v-else class="rule-empty-normal">暂无绑定规则</div>
+          </template>
         </el-table>
 
         <!-- 分页 -->
@@ -210,6 +224,8 @@ const pagination = reactive({
 const ruleList = ref<BindingRuleWithStats[]>([])
 const environmentList = ref<Environment[]>([])
 const loading = ref(false)
+/** 规则列表加载失败文案（null = 无错误） */
+const loadError = ref<string | null>(null)
 const executing = ref(false)
 // 行内启用切换进行中的规则 ID
 const statusLoadingId = ref<number | null>(null)
@@ -239,6 +255,7 @@ const loadEnvironments = async () => {
 // 加载规则列表
 const loadRules = async () => {
   loading.value = true
+  loadError.value = null
   try {
     const params = {
       keyword: filters.keyword || undefined,
@@ -263,6 +280,7 @@ const loadRules = async () => {
     pagination.total = res.data?.total || 0
   } catch (error) {
     console.error('加载规则列表失败:', error)
+    loadError.value = '绑定规则加载失败'
     ElMessage.error('加载规则列表失败')
   } finally {
     loading.value = false
@@ -515,4 +533,31 @@ onMounted(async () => {
     margin-top: 16px;
   }
 }
-</style>
+
+/* 规则列表错误态：与其它页面的既有错误态保持一致 */
+.rule-empty-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 24px 12px;
+}
+
+.rule-error-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-red, #f56c6c);
+}
+
+.rule-error-desc {
+  margin: 0 0 6px;
+  font-size: 12px;
+  color: var(--text-tertiary, #909399);
+}
+
+.rule-empty-normal {
+  padding: 24px 12px;
+  font-size: 13px;
+  color: var(--text-tertiary, #909399);
+}</style>

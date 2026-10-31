@@ -84,6 +84,20 @@
               </el-button>
             </template>
           </el-table-column>
+
+          <!--
+            错误态优先于空态：加载失败时若只显示「暂无数据」，
+            用户会误以为「真的没有环境」，而不是「请求失败了」。
+            与 models / relations / instances / dns / audit / quality 保持一致。
+          -->
+          <template #empty>
+            <div v-if="loadError" class="env-empty-error" role="alert">
+              <p class="env-error-title">{{ loadError }}</p>
+              <p class="env-error-desc">请稍后重试；若持续失败请联系管理员</p>
+              <el-button size="small" @click="loadEnvironments">重试</el-button>
+            </div>
+            <div v-else class="env-empty-normal">暂无环境</div>
+          </template>
         </el-table>
 
         <!-- 分页 -->
@@ -140,6 +154,8 @@ const pagination = reactive({
 // 数据
 const environmentList = ref<Environment[]>([])
 const loading = ref(false)
+/** 环境列表加载失败文案（null = 无错误） */
+const loadError = ref<string | null>(null)
 
 // 弹窗
 const formDialogVisible = ref(false)
@@ -152,6 +168,7 @@ const hasEnvironments = computed(() => environmentList.value.length > 0)
 // 加载环境列表
 const loadEnvironments = async () => {
   loading.value = true
+  loadError.value = null
   try {
     const params = {
       code: filters.code || undefined,
@@ -164,6 +181,7 @@ const loadEnvironments = async () => {
     pagination.total = res.data?.total || 0
   } catch (error) {
     console.error('加载环境列表失败:', error)
+    loadError.value = '环境列表加载失败'
     ElMessage.error('加载环境列表失败')
   } finally {
     loading.value = false
@@ -363,4 +381,31 @@ onMounted(() => {
     margin-top: 16px;
   }
 }
-</style>
+
+/* 环境列表错误态：与 models / relations / instances / dns / audit / quality 保持一致 */
+.env-empty-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 24px 12px;
+}
+
+.env-error-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-red, #f56c6c);
+}
+
+.env-error-desc {
+  margin: 0 0 6px;
+  font-size: 12px;
+  color: var(--text-tertiary, #909399);
+}
+
+.env-empty-normal {
+  padding: 24px 12px;
+  font-size: 13px;
+  color: var(--text-tertiary, #909399);
+}</style>
