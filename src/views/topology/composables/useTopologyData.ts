@@ -13,8 +13,23 @@ export function useTopologyData() {
     const store = useTopologyStore()
     const { queryParams, loading, graphData, domainList, dataStatus, loadError } = storeToRefs(store)
 
+    /**
+     * 英文传输层报错（axios / fetch 原生文案）。这类原文会以「拓扑数据加载失败（Network Error）…」
+     * 的形式进入用户可见文案 —— 对运维用户无意义，故映射成中文。
+     * 注意：完整的原始错误已由各 catch 里的 console.warn 保留，开发者排障不受影响。
+     */
+    const TRANSPORT_ERROR_EN =
+        /^(Network Error|Failed to fetch|Load failed|Request failed with status code \d+|timeout of \d+ms exceeded)$/i
+
     function toErrorMessage(e: unknown): string {
-        return e instanceof Error ? e.message : String(e)
+        const raw = e instanceof Error ? e.message : String(e)
+        if (TRANSPORT_ERROR_EN.test(raw.trim())) {
+            const status = raw.match(/status code (\d+)/i)
+            if (status) return `服务返回异常状态码 ${status[1]}`
+            if (/timeout/i.test(raw)) return '请求超时'
+            return '网络连接失败'
+        }
+        return raw
     }
 
     async function loadDomains() {
