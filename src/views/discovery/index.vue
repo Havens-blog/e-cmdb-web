@@ -242,6 +242,24 @@ onBeforeUnmount(stopPolling)
 .page-subtitle { font-size: 13px; color: var(--text-secondary); margin: 0; }
 .head-actions { margin-left: auto; display: flex; gap: 10px; }
 
+/* 窄屏（≤560px）：.page-head 是单行 flex，标题块与右侧 .head-actions 抢宽度，
+   390px 下「发现同步」只分到 72px 被折成 2 行（iter128 健康检查发现）。
+   允许换行并让标题块独占一行。 */
+@media (max-width: 560px) {
+  .page-head {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .page-head > div:first-child {
+    flex: 1 0 100%;
+  }
+
+  .head-actions {
+    margin-left: 0;
+  }
+}
+
 .snapshot-bar {
   display: flex;
   gap: 14px;
