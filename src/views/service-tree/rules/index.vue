@@ -128,7 +128,11 @@
             与 models / relations / instances / dns / audit / quality / environments 一致。
           -->
           <template #empty>
-            <div v-if="loadError" class="rule-empty-error" role="alert">
+            <!-- 加载中不要渲染空态内容（iter141）：ElTable 即使在 v-loading 遮罩下
+                 仍会渲染 #empty 插槽，遮罩只是视觉上盖住，读屏软件会照念
+                 「暂无绑定规则」—— 等于在数据还没到时先宣告「没有数据」。 -->
+            <div v-if="loading" class="rule-empty-loading">正在加载绑定规则…</div>
+            <div v-else-if="loadError" class="rule-empty-error" role="alert">
               <p class="rule-error-title">{{ loadError }}</p>
               <p class="rule-error-desc">请稍后重试；若持续失败请联系管理员</p>
               <el-button size="small" @click="loadRules">重试</el-button>
@@ -431,9 +435,14 @@ const handleRebindSuccess = () => {
   loadRules()
 }
 
-onMounted(async () => {
-  await loadEnvironments()
-  loadRules()
+onMounted(() => {
+  // 两条请求并行（iter141）：环境列表只用于「目标环境」列的名称补全，
+  // 规则列表不必等它。原先 `await loadEnvironments()` 再 `loadRules()` 是串行，
+  // 环境接口慢时（实测延迟 4s）规则表在整段时间里 loading=false 且列表为空，
+  // 于是 ElTable 的 #empty 插槽会渲染「暂无绑定规则」—— 用户在数据还在路上时
+  // 看到的是一个**确定性空态**，无法区分「没有规则」与「还在加载」。
+  // loadRules 里 `env_name: rule.env_name || env?.name` 已对「环境未就绪」做了兜底。
+  void Promise.all([loadEnvironments(), loadRules()])
 })
 </script>
 
@@ -557,6 +566,13 @@ onMounted(async () => {
 }
 
 .rule-empty-normal {
+  padding: 24px 12px;
+  font-size: 13px;
+  color: var(--text-tertiary, #909399);
+}
+
+// 加载中的空态占位（iter141）：与 .rule-empty-normal 同尺寸，避免切换时跳动
+.rule-empty-loading {
   padding: 24px 12px;
   font-size: 13px;
   color: var(--text-tertiary, #909399);
