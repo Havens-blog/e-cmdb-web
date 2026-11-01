@@ -305,6 +305,10 @@
   --el-drawer-bg-color: var(--dialog-bg);
   
   background-color: var(--dialog-bg);
+  // 窄屏兜底：5 处 el-drawer 中 4 处写死像素宽度（480~860px），
+  // 390px 手机视口下会超出屏幕（最宽的实例详情 860px 超出 470px）。
+  // 限制不超过视口宽度；用百分比的（ResourceDetailDrawer 50%）不受影响。
+  max-width: 92vw;
   
   .el-drawer__header {
     border-bottom: 1px solid var(--border-subtle);
