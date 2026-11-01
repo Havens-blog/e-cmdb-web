@@ -229,10 +229,22 @@
     </div>
 
     <!-- 创建/编辑对话框 -->
+    <!--
+      窄屏修复（实测 2026-11-01，390×844 视口）：
+      原实现 `width="600px"` 固定宽度，在 390px 手机屏上对话框宽 600px、
+      左右越界 210px；叠加「按模型定义渲染字段」后表单增至 22 个字段，
+      内容高 2860px，而主体 overflow 为 visible（不可滚动），
+      「确定」按钮位于 2812px 处 —— **完全在视口外且无法滚动到**，
+      窄屏下编辑功能实际不可用。
+      修复：宽度自适应视口 + 限制最大高度 + 主体内部滚动，
+      保证页脚按钮始终可达（对话框关闭按钮与底部按钮都不再被挤出屏幕）。
+    -->
     <el-dialog
       v-model="dialogVisible"
       :title="isEdit ? '编辑实例' : '新建实例'"
-      width="600px"
+      width="min(600px, 92vw)"
+      top="6vh"
+      class="instance-form-dialog"
       :close-on-click-modal="false"
     >
       <InstanceForm ref="formRef" :instance="currentInstance" :is-edit="isEdit" :models="modelOptions" />
@@ -1071,4 +1083,56 @@ onMounted(() => {
   padding: 28px 16px;
   font-size: 13px;
   color: var(--text-tertiary, #909399);
-}</style>
+}
+/* 实例表单对话框：内容高（最多 22 个模型字段），需主体内部滚动且页脚常驻可达 */
+/*
+ * 实例表单对话框：限高 + 主体内部滚动。
+ *
+ * 踩坑记录（实测 2026-11-01）：
+ *  - 只给 .el-dialog 设 max-height 无效 —— 子元素不会自动获得滚动条，
+ *    实测 footer 仍被推到 2719px；
+ *  - `:deep()` 也无效 —— el-dialog 的根元素**不继承父组件的 scoped 属性**
+ *    （实测 .instance-form-dialog 只有 class/tabindex/style，没有 data-v-xxx），
+ *    因此 `.instance-form-dialog[data-v-xxx] .el-dialog__body` 永不匹配。
+ * 故用独立的非 scoped 样式块，靠 class 名限定作用域。
+ */
+/* 窄屏额外收窄内边距，给输入框留出更多宽度 */
+@media (max-width: 560px) {
+  .instance-form-dialog {
+    :deep(.el-dialog__header) {
+      padding: 14px 16px 8px;
+    }
+    :deep(.el-dialog__body) {
+      padding: 8px 16px;
+    }
+    :deep(.el-dialog__footer) {
+      padding: 10px 16px 14px;
+    }
+  }
+}
+</style>
+
+<!--
+  实例表单对话框的限高与滚动：必须放在**非 scoped** 样式块中。
+  el-dialog 的根元素不继承父组件的 scoped 属性，scoped 规则无法命中其内部节点
+  （实测 .instance-form-dialog 上只有 class/tabindex/style，没有 data-v-xxx）。
+  作用域由 .instance-form-dialog 这个专属 class 保证。
+-->
+<style lang="scss">
+.instance-form-dialog {
+  margin-top: 6vh;
+  margin-bottom: 6vh;
+
+  .el-dialog__body {
+    /* 减去标题栏与页脚高度，保证页脚按钮留在视口内 */
+    max-height: calc(88vh - 150px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .el-dialog__footer {
+    border-top: 1px solid var(--border-subtle);
+    padding-top: 12px;
+  }
+}
+</style>
