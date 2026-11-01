@@ -106,6 +106,7 @@
         @selection-change="handleSelectionChange"
         @row-click="handleRowClick"
         @sort-change="handleSortChange"
+        :default-sort="defaultSort"
         row-key="id"
         style="width: 100%"
       >
@@ -274,11 +275,13 @@ import { buildInstanceListParams } from '@/utils/instanceQuery'
 import { Download, Plus, Refresh, Search, Setting, WarningFilled } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, reactive, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import ColumnSettingsDialog, { type ColumnConfig } from './components/ColumnSettingsDialog.vue'
 import InstanceForm from './components/InstanceForm.vue'
 
 const route = useRoute()
+// 用于把筛选/排序/分页同步到 URL（router.replace，不新增历史记录）
+const router = useRouter()
 
 // 资产类型映射 - 用于跳转到对应详情页
 const assetTypeRouteMap: Record<string, { label: string; icon: string; route: string; tagType: string }> = {
@@ -525,7 +528,25 @@ const SORTABLE_COLUMN_MAP: Record<string, string> = {
   os_type: 'attributes.os_type',
 }
 
+const REVERSE_SORT_MAP: Record<string, string> = Object.fromEntries(
+  Object.entries(SORTABLE_COLUMN_MAP).map(([k, v]) => [v, k]),
+)
 const isSortableColumn = (key: string): boolean => Boolean(SORTABLE_COLUMN_MAP[key])
+
+/**
+ * 把 sortState 反映到表格列头的排序视觉状态。
+ *
+ * 缺陷修复（实测 2026-11-01）：从 URL 恢复排序后，**数据确实按 sort 排序了，
+ * 但列头不显示排序箭头** —— 因为 `default-sort` 只在表格初始化时生效，
+ * 而 el-table 挂载时 sortState 还没恢复（同一 tick 内恢复 + 渲染的时序）。
+ * 改用响应式 computed，恢复完成后列头自动同步出箭头。
+ */
+const defaultSort = computed(() => {
+  if (!sortState.value) return undefined
+  const colKey = REVERSE_SORT_MAP[sortState.value.by]
+  if (!colKey) return undefined
+  return { prop: colKey, order: sortState.value.desc ? 'descending' : 'ascending' } as const
+})
 
 /** el-table 的 sort-change 回调：prop 为列 key，order 为 'ascending' | 'descending' | null */
 const handleSortChange = ({ prop, order }: { prop: string | null; order: string | null }) => {
@@ -549,6 +570,79 @@ const buildListParams = (page: number, size: number): Record<string, any> => {
   return params
 }
 
+/**
+ * 把筛选 / 排序 / 分页同步到 URL query。
+ *
+ * 缺陷修复（实测 2026-11-01）：此前只有 `model_uid` 会从 URL 读取，
+ * 其余筛选与排序**完全不落 URL**。实测：设置「云平台=阿里云」（31 条）+ 名称升序，
+ * 刷新后变回全量 33025 条、排序箭头消失 —— 用户精心筛好的视图一次刷新即归零，
+ * 也无法把该视图的链接分享给同事。
+ *
+ * 设计：
+ * - 用 `router.replace` 而非 push，避免每改一次筛选就往历史栈塞一条
+ * - 只写非空值，URL 保持干净（默认状态不产生任何 query）
+ * - 排序的反向映射复用 SORTABLE_COLUMN_MAP，保证 URL 里存的是**列 key**（可读、稳定），
+ *   而不是 `attributes.provider` 这种后端字段名
+ */
+
+
+/** 将当前 UI 状态写入 URL（仅替换 query，不新增历史记录） */
+const syncStateToUrl = () => {
+  const q: Record<string, string> = {}
+  if (filters.model_uid) q.model_uid = filters.model_uid
+  if (filters.keyword) q.keyword = filters.keyword
+  if (filters.provider) q.provider = filters.provider
+  if (filters.region) q.region = filters.region
+  if (sortState.value) {
+    const colKey = REVERSE_SORT_MAP[sortState.value.by]
+    if (colKey) {
+      q.sort = colKey
+      q.order = sortState.value.desc ? 'desc' : 'asc'
+    }
+  }
+  if (pagination.size !== 20) q.size = String(pagination.size)
+  if (pagination.page > 1) q.page = String(pagination.page)
+
+  // 保留租户等非本页管理的 query
+  const merged: Record<string, any> = { ...route.query }
+  for (const k of ['model_uid', 'keyword', 'provider', 'region', 'sort', 'order', 'size', 'page']) {
+    delete merged[k]
+  }
+  Object.assign(merged, q)
+
+  const before = new URLSearchParams(
+    Object.entries(route.query).map(([k, v]) => [k, String(v ?? '')]),
+  ).toString()
+  const after = new URLSearchParams(
+    Object.entries(merged).map(([k, v]) => [k, String(v ?? '')]),
+  ).toString()
+  if (before !== after) {
+    void router.replace({ query: merged })
+  }
+}
+
+/** 从 URL query 恢复 UI 状态（在首次请求之前调用） */
+const restoreStateFromUrl = () => {
+  const q = route.query
+  const str = (v: unknown) => (typeof v === 'string' ? v : '')
+
+  if (str(q.model_uid)) filters.model_uid = str(q.model_uid)
+  if (str(q.keyword)) filters.keyword = str(q.keyword)
+  if (str(q.provider)) filters.provider = str(q.provider)
+  if (str(q.region)) filters.region = str(q.region)
+
+  const sortCol = str(q.sort)
+  const sortField = sortCol ? SORTABLE_COLUMN_MAP[sortCol] : undefined
+  if (sortField) {
+    sortState.value = { by: sortField, desc: str(q.order) === 'desc' }
+  }
+
+  const size = Number(str(q.size))
+  if (Number.isFinite(size) && [20, 50, 100].includes(size)) pagination.size = size
+  const page = Number(str(q.page))
+  if (Number.isFinite(page) && page > 0) pagination.page = page
+}
+
 // 加载数据
 const fetchInstances = async () => {
   loading.value = true
@@ -565,6 +659,9 @@ const fetchInstances = async () => {
       if (item.attributes?.region) regions.add(item.attributes.region)
     })
     regionOptions.value = Array.from(regions).sort()
+
+    // 列表加载成功后把当前筛选/排序/分页同步到 URL，供刷新与分享复用
+    syncStateToUrl()
   } catch (error) {
     console.error('加载实例列表失败:', error)
     // 持久错误态：仅靠 ElMessage 的话，toast 几秒后消失，
@@ -796,10 +893,8 @@ const handleDelete = async (row: InstanceVO) => {
 onMounted(() => {
   initColumnSettings()
   // H-02：必须在首次 fetch 前读取路由 query，避免先全量后过滤的二次请求
-  const queryModelUid = route.query.model_uid
-  if (typeof queryModelUid === 'string' && queryModelUid) {
-    filters.model_uid = queryModelUid
-  }
+  // 这里一次性恢复筛选 / 排序 / 分页（此前只恢复 model_uid，其余刷新即丢）
+  restoreStateFromUrl()
   fetchInstances()
   fetchModels()
 })
