@@ -267,6 +267,11 @@
   background-color: var(--dialog-bg);
   border: 1px solid var(--dialog-border);
   box-shadow: var(--shadow-lg);
+  // 窄屏兜底：全站 16 处 el-dialog 均写死像素宽度（420~760px），
+  // 390px 手机视口下会左右越界。这里统一限制不超过视口宽度。
+  max-width: 92vw;
+  margin-left: auto;
+  margin-right: auto;
   
   .el-dialog__header {
     border-bottom: 1px solid var(--border-subtle);
@@ -281,6 +286,12 @@
   .el-dialog__body {
     padding: 24px;
     color: var(--text-regular);
+    // 内容超高时内部滚动：Element Plus 默认 margin-top 为 15vh，
+    // 实测「新建规则」对话框按 90vh 限高后底部达 900px，页脚被挤出 844px 视口。
+    // 按 70vh 限高，为顶部偏移与标题栏/页脚留出余量，保证「确定」始终可点。
+    max-height: calc(70vh - 150px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
   
   .el-dialog__footer {
