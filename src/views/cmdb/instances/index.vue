@@ -105,11 +105,18 @@
         v-loading="loading"
         @selection-change="handleSelectionChange"
         @row-click="handleRowClick"
+        @sort-change="handleSortChange"
         row-key="id"
         style="width: 100%"
       >
         <el-table-column type="selection" width="40" />
-        <el-table-column prop="asset_name" label="名称" min-width="180" fixed="left">
+        <el-table-column
+          prop="asset_name"
+          label="名称"
+          min-width="180"
+          fixed="left"
+          sortable="custom"
+        >
           <template #default="{ row }">
             <span class="name-link" @click.stop="handleViewDetail(row)">
               {{ row.asset_name || row.asset_id || '-' }}
@@ -123,6 +130,7 @@
           :label="col.label"
           :width="col.width"
           :min-width="col.minWidth"
+          :sortable="isSortableColumn(col.key) ? 'custom' : false"
         >
           <template #default="{ row }">
             <!-- 资产类型 -->
@@ -485,8 +493,61 @@ const formatTags = (tags: Record<string, string> | undefined) => {
  * 优先于 URL 带入的 model_uid —— 原实现相反，导致「带 ?model_uid=xxx 进入后
  * 在下拉里改选类型，筛选完全不生效」（实测请求仍是旧 model_uid）。
  */
-const buildListParams = (page: number, size: number): Record<string, any> =>
-  buildInstanceListParams(filters, page, size)
+/**
+ * 排序状态（列头排序）。
+ *
+ * 背景（实测 2026-11-01）：实例列表此前**完全不支持排序** ——
+ * 表格没有可排序列，后端也硬编码按 ctime 倒序。
+ * 用户无法按名称/状态/区域等排序，只能翻页手工找。
+ *
+ * 本实现把列头的 sortable="custom" 映射到后端的 `sort_by` + `order` 参数；
+ * 后端有白名单校验，非法字段会回退默认排序，不会造成扫表或注入。
+ */
+const sortState = ref<{ by: string; desc: boolean } | null>(null)
+
+/**
+ * 列 key → 后端可排序字段的映射。
+ *
+ * 只映射后端白名单内的字段（见 e-cmdb-service dao.sortableFields），
+ * 不在表内的列不显示排序箭头，避免点了没反应。
+ */
+const SORTABLE_COLUMN_MAP: Record<string, string> = {
+  asset_name: 'asset_name',
+  asset_id: 'asset_id',
+  model_uid: 'model_uid',
+  account_id: 'account_id',
+  creation_time: 'ctime',
+  update_time: 'utime',
+  provider: 'attributes.provider',
+  region: 'attributes.region',
+  status: 'attributes.status',
+  zone: 'attributes.zone',
+  os_type: 'attributes.os_type',
+}
+
+const isSortableColumn = (key: string): boolean => Boolean(SORTABLE_COLUMN_MAP[key])
+
+/** el-table 的 sort-change 回调：prop 为列 key，order 为 'ascending' | 'descending' | null */
+const handleSortChange = ({ prop, order }: { prop: string | null; order: string | null }) => {
+  const field = prop ? SORTABLE_COLUMN_MAP[prop] : undefined
+  if (!field || !order) {
+    // 取消排序 → 回到后端默认（ctime 倒序）
+    sortState.value = null
+  } else {
+    sortState.value = { by: field, desc: order === 'descending' }
+  }
+  pagination.page = 1
+  fetchInstances()
+}
+
+const buildListParams = (page: number, size: number): Record<string, any> => {
+  const params = buildInstanceListParams(filters, page, size)
+  if (sortState.value) {
+    params.sort_by = sortState.value.by
+    params.order = sortState.value.desc ? 'desc' : 'asc'
+  }
+  return params
+}
 
 // 加载数据
 const fetchInstances = async () => {
