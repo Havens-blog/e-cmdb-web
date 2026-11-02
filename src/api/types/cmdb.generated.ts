@@ -138,6 +138,12 @@ export interface InstanceRelationVO {
     source_instance_id: number
     target_instance_id: number
     tenant_id: number
+    source_asset_id: string
+    source_asset_name: string
+    source_model_uid: string
+    target_asset_id: string
+    target_asset_name: string
+    target_model_uid: string
 }
 
 export interface InstanceVO {

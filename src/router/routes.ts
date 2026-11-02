@@ -59,6 +59,15 @@ const routes: RouteRecordRaw[] = [
         },
     },
     {
+        path: '/instance-relations',
+        name: 'CmdbInstanceRelations',
+        component: () => import('@/views/cmdb/instance-relations/index.vue'),
+        meta: {
+            title: '实例关系',
+            icon: 'Connection',
+        },
+    },
+    {
         // 原 '/cmdb/topology'：去掉前缀后会与下方「资源拓扑」的 '/topology' 撞车，
         // 因此收进模型域下（真实 URL /cmdb/models/topology），语义即「模型拓扑」
         path: '/models/topology',
