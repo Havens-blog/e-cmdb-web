@@ -20,6 +20,7 @@ import {
 import type { DnsDomain, DnsRecord, DnsStats } from '@/api/types/dns'
 import { ElMessage } from 'element-plus'
 import { Refresh, Search } from '@element-plus/icons-vue'
+import { useUrlFilters } from '@/composables/useUrlFilters'
 
 const PROVIDER_LABELS: Record<string, string> = {
     aliyun: '阿里云',
@@ -37,6 +38,11 @@ const domainTotal = ref(0)
 /** 域名列表加载失败文案（null = 无错误） */
 const domainsError = ref<string | null>(null)
 const domainQuery = reactive({ keyword: '', provider: '', offset: 0, limit: 50 })
+
+// 筛选同步 URL（iter150）：此前 keyword / provider 只存在内存里，
+// 刷新、分享链接、或从记录详情返回时筛选全部丢失。
+// **offset / limit 必须 omit** —— 分页进 URL 会让「分享链接」带上别人的浏览位置，且与分页组件状态互相打架。
+useUrlFilters(domainQuery, { omit: ['offset', 'limit'] })
 
 // 统计
 const stats = ref<DnsStats | null>(null)

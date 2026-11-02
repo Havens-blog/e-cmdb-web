@@ -204,6 +204,7 @@ import ExecuteConfirmDialog from './components/ExecuteConfirmDialog.vue'
 import RebindDialog from './components/RebindDialog.vue'
 import RuleConfirmDialog from './components/RuleConfirmDialog.vue'
 import RuleFormDialog from './components/RuleFormDialog.vue'
+import { useUrlFilters } from '@/composables/useUrlFilters'
 
 // 任务 1 后端 RuleVO 透出的执行统计字段（类型定义暂未同步，本地扩展）
 interface BindingRuleWithStats extends BindingRule {
@@ -215,6 +216,18 @@ interface BindingRuleWithStats extends BindingRule {
 const filters = reactive({
   keyword: '',
   enabled: undefined as boolean | undefined
+})
+
+// 筛选同步 URL（iter150）：此前 keyword / enabled 只存在内存里，
+// 刷新、分享链接、或从详情返回时筛选全部丢失。
+// enabled 是 boolean | undefined，必须给 codec —— 否则读回 'true' 会被当成字符串塞进布尔字段。
+useUrlFilters(filters, {
+  codec: {
+    enabled: {
+      encode: (v) => (v === undefined || v === '' ? '' : String(v)),
+      decode: (s) => (s === 'true' ? true : s === 'false' ? false : undefined),
+    },
+  },
 })
 
 // 分页
