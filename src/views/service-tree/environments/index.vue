@@ -137,11 +137,27 @@ import { MagicStick, Plus, RefreshLeft, Search } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, reactive, ref } from 'vue'
 import EnvironmentFormDialog from './components/EnvironmentFormDialog.vue'
+import { useUrlFilters } from '@/composables/useUrlFilters'
 
 // 筛选条件
 const filters = reactive({
   code: '',
   status: undefined as number | undefined
+})
+
+// 筛选同步 URL（iter150）：此前 code / status 只存在内存里，
+// 刷新、分享链接、或从详情返回时筛选全部丢失（实测：筛「启用」后 4 行→0 行，URL 不变）。
+// status 是 number | undefined，必须给 codec —— 否则读回 '1' 会被当成字符串塞进数字字段。
+useUrlFilters(filters, {
+  codec: {
+    status: {
+      encode: (v) => (v === undefined || v === '' ? '' : String(v)),
+      decode: (s) => {
+        const n = Number(s)
+        return Number.isFinite(n) ? n : undefined
+      },
+    },
+  },
 })
 
 // 分页
