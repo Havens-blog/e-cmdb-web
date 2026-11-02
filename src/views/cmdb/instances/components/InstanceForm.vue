@@ -56,10 +56,24 @@
         <span v-if="attrsLoading" class="attr-loading">（加载中…）</span>
       </el-divider>
 
+      <!-- 提交时若有未填的模型必填字段，明确列出，避免用户只看到"某处有错" -->
+      <el-alert
+        v-if="missingRequired.length"
+        class="missing-required"
+        type="error"
+        show-icon
+        :closable="false"
+        title="请先填写以下必填字段"
+      >
+        <div class="missing-list">{{ missingRequired.join('、') }}</div>
+      </el-alert>
+
       <el-form-item
         v-for="a in visibleAttrs"
         :key="a.field_uid"
         :label="a.display_name || a.field_name || a.field_uid"
+        :required="a.required"
+        :rules="attrRulesFor(a)"
       >
         <!-- 枚举：下拉选择 -->
         <el-select
@@ -122,7 +136,7 @@ import { createCmdbInstanceApi, updateCmdbInstanceApi } from '@/api'
 import { listAttributesApi } from '@/api/cmdb'
 import type { AttributeVO, InstanceVO, ModelVO } from '@/api/types/cmdb'
 import { Delete, Plus } from '@element-plus/icons-vue'
-import type { FormInstance, FormRules } from 'element-plus'
+import type { FormInstance, FormItemRule, FormRules } from 'element-plus'
 import { computed, reactive, ref, watch } from 'vue'
 
 const props = defineProps<{
@@ -159,6 +173,12 @@ const attributeList = ref<{ key: string; value: string }[]>([])
  */
 const modelAttrs = ref<AttributeVO[]>([])
 const attrsLoading = ref(false)
+
+/**
+ * 未填写的模型必填字段名（中文）。提交时若有值则阻断并内联提示。
+ * 见 validate() 的说明：动态字段无法走 el-form rules，需手动校验。
+ */
+const missingRequired = ref<string[]>([])
 
 /** 按字段定义顺序、仅取可显示字段 */
 const visibleAttrs = computed(() =>
@@ -236,6 +256,32 @@ watch(
 const rules: FormRules = {
   uid: [{ required: true, message: '请选择模型', trigger: 'change' }],
   asset_id: [{ required: true, message: '请输入资产ID', trigger: 'blur' }],
+}
+
+/**
+ * 模型字段的必填校验规则。
+ *
+ * 缺陷修复（实测 2026-11-02）：表单此前只把「模型」「资产ID」两个通用字段标为必填，
+ * **模型定义里 required=true 的字段完全没有必填标记，也不做客户端校验** ——
+ * 实测新建 ecs 实例时表单只显示 2 个必填项，而 ecs 实际有 7 个必填字段。
+ * 用户在毫不知情的情况下提交，只能等后端拒绝后才知道要填什么。
+ *
+ * 注意：这些字段的值存在 `attrValues` 而不是 `form` 上，el-form 的 rules 无法按
+ * prop 路径取到，因此这里用**函数式校验**（custom validator）直接读 attrValues。
+ */
+const attrRulesFor = (a: any): FormItemRule[] => {
+  if (!a?.required) return []
+  return [
+    {
+      required: true,
+      validator: (_rule: any, _value: any, callback: (e?: Error) => void) => {
+        const raw = attrValues[a.field_uid]
+        const empty = raw === undefined || raw === null || String(raw).trim() === ''
+        callback(empty ? new Error(`请填写${a.display_name || a.field_name || a.field_uid}`) : undefined)
+      },
+      trigger: ['blur', 'change'],
+    },
+  ]
 }
 
 // 监听实例变化，填充表单
@@ -379,14 +425,29 @@ function coerceByType(value: string, fieldType: string): any {
  * Element Plus 的 validate() 校验失败时抛异常而非返回 false，
  * 父组件 handleSubmit 依赖布尔结果（`if (!valid) return`），
  * 故在此收敛为 boolean，避免异常穿透导致点击确定后无任何反馈。
+ *
+ * 另：模型动态字段的值存在 `attrValues`（不在 `form` 上），
+ * el-form 的 rules 按 prop 路径取值取不到它们，即使给 el-form-item 传了 :rules
+ * 也不会真正校验（实测：必填星号显示了，但空值仍能提交）。
+ * 因此这里**手动补充一轮必填校验**，把缺失字段写入 missingRequired 供模板提示。
  */
 const validate = async (): Promise<boolean> => {
+  let formOK = true
   try {
     await formRef.value?.validate()
-    return true
   } catch {
-    return false
+    formOK = false
   }
+
+  missingRequired.value = visibleAttrs.value
+    .filter((a) => a.required)
+    .filter((a) => {
+      const raw = attrValues[a.field_uid]
+      return raw === undefined || raw === null || String(raw).trim() === ''
+    })
+    .map((a) => a.display_name || a.field_name || a.field_uid)
+
+  return formOK && missingRequired.value.length === 0
 }
 
 const submit = async () => {
@@ -455,4 +516,16 @@ defineExpose({ submit, reset, validate })
   font-size: 12px;
   font-weight: 400;
   color: var(--text-tertiary, #909399);
+}
+
+/* 未填必填字段提示：列出具体字段名，而不是笼统的"表单有误" */
+.missing-required {
+  margin-bottom: 12px;
+
+  .missing-list {
+    margin-top: 4px;
+    font-size: 13px;
+    line-height: 1.5;
+    word-break: break-all;
+  }
 }</style>
