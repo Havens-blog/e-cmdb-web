@@ -45,6 +45,26 @@ export interface OrphanSourceResult {
     total: number
     groups: OrphanModelGroup[]
 }
+
+/** 同步链路「记录但不阻断」写入的问题清单条目 */
+export interface SyncQualityIssue {
+    id: number
+    tenant_id: number
+    model_uid: string
+    asset_id: string
+    asset_name: string
+    issue_type: string   // required / enum / type
+    field_uid: string
+    message: string
+    last_seen: number
+    create_time: number
+}
+
+/** 同步问题清单结果 */
+export interface SyncIssueList {
+    items: SyncQualityIssue[]
+    total: number
+}
 // ==================== 函数 ====================
 
 /** 获取质量概览与健康度 */
@@ -68,4 +88,15 @@ export function listQualityIssuesApi(params: { type: string; offset?: number; li
  */
 export function getOrphanSourcesApi() {
     return instance.get<OrphanSourceResult>({ url: '/cmdb/quality/orphan-sources' })
+}
+
+/**
+ * 同步链路「记录但不阻断」写入的问题清单。
+ *
+ * 与 /quality/issues 的区别：后者是全量扫描实时算（有 60s 缓存、口径为存量），
+ * 本接口读同步时落库的 sync_quality_issue 集合，天然分页、无缓存延迟、
+ * 逐条可追溯到哪个 asset 的哪个字段、哪类问题（增量）。
+ */
+export function listSyncIssuesApi(params: { model_uid?: string; issue_type?: string; asset_id?: string; offset?: number; limit?: number }) {
+    return instance.get<SyncIssueList>({ url: '/cmdb/quality/sync-issues', params })
 }

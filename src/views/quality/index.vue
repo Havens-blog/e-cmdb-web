@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { getOrphanSourcesApi, getQualityOverviewApi, listQualityIssuesApi, type OrphanModelGroup, type QualityIssue, type QualityOverview } from '@/api/quality'
+import { getOrphanSourcesApi, getQualityOverviewApi, listQualityIssuesApi, listSyncIssuesApi, type OrphanModelGroup, type QualityIssue, type QualityOverview, type SyncQualityIssue } from '@/api/quality'
 import { CircleCheck, Warning, WarningFilled, Connection, Box, RefreshRight } from '@element-plus/icons-vue'
 
 const loading = ref(false)
@@ -37,6 +37,26 @@ const typeMeta: Record<string, { label: string; color: string; icon: any }> = {
 }
 
 const page = ref({ offset: 0, limit: 20 })
+
+/**
+ * 同步问题清单（方案 B「记录但不阻断」落库的问题）。
+ *
+ * 与上面「缺失必填字段」指标卡的区别：
+ * - 缺失必填字段 = 全量扫描的**存量**问题（有 60s 缓存）
+ * - 同步问题 = 同步链路**增量**实时记录（无缓存、逐条可追溯到 asset/field/type）
+ */
+const syncIssues = ref<SyncQualityIssue[]>([])
+const syncTotal = ref(0)
+const syncVisible = ref(false)
+const syncLoading = ref(false)
+const syncError = ref<string | null>(null)
+const syncPage = ref({ offset: 0, limit: 20 })
+
+const SYNC_ISSUE_META: Record<string, { label: string; color: string }> = {
+    required: { label: '必填缺失', color: 'var(--accent-red)' },
+    enum: { label: '枚举越界', color: 'var(--accent-yellow)' },
+    type: { label: '类型不符', color: 'var(--accent-purple)' },
+}
 
 const healthColor = computed(() => {
     const s = overview.value?.health_score ?? 100
@@ -101,6 +121,50 @@ function switchType(t: '' | 'orphan_instance' | 'missing_field' | 'dangling_rela
     if (t === 'orphan_instance') loadOrphanSources()
 }
 
+/** 切换同步问题清单显隐；首次展开时加载 */
+function toggleSyncIssues() {
+    syncVisible.value = !syncVisible.value
+    if (syncVisible.value) {
+        syncPage.value.offset = 0
+        loadSyncIssues()
+        loadSyncCount()
+    }
+}
+
+async function loadSyncCount() {
+    try {
+        const resp = await listSyncIssuesApi({ limit: 1 })
+        syncTotal.value = resp.data.total
+    } catch {
+        // 计数失败不打断其它内容，仅在展开时可见
+    }
+}
+
+async function loadSyncIssues() {
+    syncLoading.value = true
+    syncError.value = null
+    try {
+        const resp = await listSyncIssuesApi({
+            offset: syncPage.value.offset,
+            limit: syncPage.value.limit,
+        })
+        syncIssues.value = resp.data.items
+        syncTotal.value = resp.data.total
+    } catch (e: any) {
+        syncError.value = '同步问题清单加载失败'
+        ElMessage.error(e?.message || '加载同步问题清单失败')
+    } finally {
+        syncLoading.value = false
+    }
+}
+
+const formatSyncTime = (ms: number) => {
+    if (!ms) return '—'
+    const d = new Date(ms)
+    const p = (n: number) => String(n).padStart(2, '0')
+    return `${d.getFullYear()}/${p(d.getMonth() + 1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
+}
+
 onMounted(() => { loadOverview() })
 </script>
 
@@ -143,6 +207,10 @@ onMounted(() => { loadOverview() })
         <div class="metric-card" @click="switchType('dangling_relation')" :class="{ active: activeType === 'dangling_relation' }">
           <div class="metric-value" style="color: var(--accent-purple)">{{ overview.dangling_relation_count }}</div>
           <div class="metric-label">悬空关系</div>
+        </div>
+        <div class="metric-card" @click="toggleSyncIssues" :class="{ active: syncVisible }">
+          <div class="metric-value" style="color: var(--accent-orange, #e6a23c)">{{ syncTotal }}</div>
+          <div class="metric-label">同步问题</div>
         </div>
         <div class="metric-card">
           <div class="metric-value">{{ overview.total_instances }}</div>
@@ -227,6 +295,55 @@ onMounted(() => { loadOverview() })
       <div v-if="!activeType" class="empty-hint">
         <el-icon :size="40"><CircleCheck /></el-icon>
         <p>点击上方指标卡片查看对应问题明细</p>
+      </div>
+    </div>
+
+    <!-- 同步问题清单（方案 B：记录但不阻断，增量） -->
+    <div v-if="syncVisible" class="sync-issues">
+      <div class="issues-head">
+        <h2 class="section-title">
+          同步问题
+          <span class="type-tag" style="color: var(--accent-orange, #e6a23c)">
+            同步时实时记录，共 {{ syncTotal }} 条
+          </span>
+        </h2>
+      </div>
+
+      <div v-if="syncError" class="sync-empty-error" role="alert">
+        <el-icon><WarningFilled /></el-icon>
+        <span>{{ syncError }}</span>
+        <el-button size="small" @click="loadSyncIssues">重试</el-button>
+      </div>
+
+      <el-table v-else v-loading="syncLoading" :data="syncIssues" style="width: 100%">
+        <el-table-column label="问题类型" width="130">
+          <template #default="{ row }">
+            <el-tag size="small" :type="row.issue_type === 'required' ? 'danger' : (row.issue_type === 'enum' ? 'warning' : 'info')">
+              {{ SYNC_ISSUE_META[row.issue_type]?.label || row.issue_type }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="实例名称" min-width="180">
+          <template #default="{ row }">{{ row.asset_name || row.asset_id || '—' }}</template>
+        </el-table-column>
+        <el-table-column prop="model_uid" label="模型" width="140" />
+        <el-table-column prop="field_uid" label="字段" width="150" />
+        <el-table-column prop="message" label="说明" min-width="240" show-overflow-tooltip />
+        <el-table-column label="最近发现" width="180">
+          <template #default="{ row }">
+            <span class="sync-time">{{ formatSyncTime(row.last_seen) }}</span>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <div v-if="syncVisible && !syncError" class="pagination">
+        <el-pagination
+          layout="total, prev, pager, next"
+          :total="syncTotal"
+          :page-size="syncPage.limit"
+          :current-page="syncPage.offset / syncPage.limit + 1"
+          @current-change="(p: number) => { syncPage.offset = (p - 1) * syncPage.limit; loadSyncIssues() }"
+        />
       </div>
     </div>
   </div>
@@ -401,4 +518,29 @@ onMounted(() => { loadOverview() })
   margin: 0 0 6px;
   font-size: 12px;
   color: var(--text-tertiary, #909399);
-}</style>
+}
+
+/* ==================== 同步问题清单 ==================== */
+.sync-issues {
+  margin-top: 16px;
+  padding: 16px 20px;
+  border-radius: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+}
+
+.sync-time {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.sync-empty-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  border: 1px dashed var(--accent-orange, #e6a23c);
+  border-radius: 8px;
+  color: var(--accent-orange, #e6a23c);
+}
+</style>
