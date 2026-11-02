@@ -7,7 +7,23 @@
         <h1 class="page-title">实例关系</h1>
         <p class="page-subtitle">资产实例之间的真实关联（如云服务器挂载的云盘）</p>
       </div>
-      <el-button class="refresh-btn" :icon="Refresh" circle @click="load" title="刷新" />
+      <div class="head-actions">
+        <el-select
+          v-model="relationType"
+          class="type-filter"
+          placeholder="全部关系类型"
+          clearable
+          @change="onFilterChange"
+        >
+          <el-option
+            v-for="(label, uid) in RELATION_LABELS"
+            :key="uid"
+            :label="label"
+            :value="uid"
+          />
+        </el-select>
+        <el-button class="refresh-btn" :icon="Refresh" circle @click="load" title="刷新" />
+      </div>
     </div>
 
     <!-- 错误态 -->
@@ -83,6 +99,8 @@ const loading = ref(false)
 const loadError = ref<string | null>(null)
 const page = ref(1)
 const size = ref(20)
+// 关系类型筛选（空 = 全部）
+const relationType = ref('')
 
 /**
  * 关系类型 UID → 中文。当前库中仅有 ecs_disk 一种实例关系；
@@ -104,10 +122,12 @@ const load = async () => {
   loading.value = true
   loadError.value = null
   try {
-    const res = await listInstanceRelationsApi({
+    const params: Record<string, any> = {
       offset: (page.value - 1) * size.value,
       limit: size.value,
-    })
+    }
+    if (relationType.value) params.relation_type_uid = relationType.value
+    const res = await listInstanceRelationsApi(params)
     const data = res.data?.data || res.data
     rows.value = data?.relations || []
     total.value = data?.total || 0
@@ -120,6 +140,11 @@ const load = async () => {
 }
 
 const onSizeChange = () => {
+  page.value = 1
+  load()
+}
+
+const onFilterChange = () => {
   page.value = 1
   load()
 }
@@ -142,6 +167,17 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 16px;
+}
+
+.head-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.type-filter {
+  width: 200px;
 }
 
 .page-title {
