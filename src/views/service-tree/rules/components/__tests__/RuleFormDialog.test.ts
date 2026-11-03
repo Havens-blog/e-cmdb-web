@@ -181,7 +181,32 @@ describe('RuleFormDialog dry-run 试运行', () => {
         const wrapper = await mountDialog([{ field: 'tag.service', operator: 'contains', value: '' }])
         await (wrapper.vm as any).handleDryRun()
         expect(dryRunRulesApi).not.toHaveBeenCalled()
-        expect(warnSpy).toHaveBeenCalledWith('请填写条件值')
+        // iter159：提示改为带行号，便于用户在多个条件中定位到出问题的那一条
+        expect(warnSpy).toHaveBeenCalledWith('第 1 个条件缺少条件值')
+        warnSpy.mockRestore()
+    })
+
+    it('多个条件时，提示指明是第几个条件（iter159）', async () => {
+        const warnSpy = vi.spyOn(ElMessage, 'warning').mockImplementation(() => ({}) as any)
+        const wrapper = await mountDialog([
+            { field: 'tag.env', operator: 'eq', value: 'prod' },
+            { field: 'tag.service', operator: 'contains', value: '' },
+        ])
+        await (wrapper.vm as any).handleDryRun()
+        expect(dryRunRulesApi).not.toHaveBeenCalled()
+        expect(warnSpy).toHaveBeenCalledWith('第 2 个条件缺少条件值')
+        warnSpy.mockRestore()
+    })
+
+    it('条件缺字段或操作符时，提示指明是第几个条件（iter159）', async () => {
+        const warnSpy = vi.spyOn(ElMessage, 'warning').mockImplementation(() => ({}) as any)
+        const wrapper = await mountDialog([
+            { field: 'tag.env', operator: 'eq', value: 'prod' },
+            { field: '', operator: '', value: '' },
+        ])
+        await (wrapper.vm as any).handleDryRun()
+        expect(dryRunRulesApi).not.toHaveBeenCalled()
+        expect(warnSpy).toHaveBeenCalledWith('第 2 个条件未填完整：请选择字段和操作符')
         warnSpy.mockRestore()
     })
 
