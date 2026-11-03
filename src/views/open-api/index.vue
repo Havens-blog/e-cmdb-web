@@ -163,7 +163,9 @@ async function handleDeleteWebhook(w: Webhook) {
     await ElMessageBox.confirm(`确认删除订阅「${w.name}」？`, '提示', { type: 'warning' })
     try {
         await deleteWebhookApi(w.id)
-        ElMessage.success('已删除')
+        // 与全站其余 29 处删除成功提示统一为「X成功」式（本处原为「已删除」，
+        // 是全站仅有的 3 处纯风格分歧之一，零信息差异）。见 iter156。
+        ElMessage.success('删除成功')
         await loadWebhooks()
     } catch (e: any) {
         ElMessage.error(e?.message || '删除失败')
