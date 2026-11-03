@@ -138,6 +138,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, reactive, ref } from 'vue'
 import EnvironmentFormDialog from './components/EnvironmentFormDialog.vue'
 import { useUrlFilters } from '@/composables/useUrlFilters'
+import { clampPageAfterTotalChange } from '@/utils/clampPage'
 
 // 筛选条件
 const filters = reactive({
@@ -193,8 +194,19 @@ const loadEnvironments = async () => {
       page_size: pagination.pageSize
     }
     const res = await listEnvironmentsApi(params)
-    environmentList.value = res.data?.list || []
-    pagination.total = res.data?.total || 0
+    const items = res.data?.list || []
+    const newTotal = res.data?.total || 0
+    // 页码收敛（iter169）：删除当前页最后一条时 pagination.page 不变 → 请求到空页。
+    const fixedPage = clampPageAfterTotalChange(pagination.page, newTotal, pagination.pageSize)
+    if (fixedPage !== pagination.page) {
+      pagination.page = fixedPage
+      environmentList.value = []
+      pagination.total = newTotal
+      await loadEnvironments()
+      return
+    }
+    environmentList.value = items
+    pagination.total = newTotal
   } catch (error) {
     console.error('加载环境列表失败:', error)
     loadError.value = '环境列表加载失败'
