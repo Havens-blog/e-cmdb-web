@@ -205,6 +205,7 @@ import RebindDialog from './components/RebindDialog.vue'
 import RuleConfirmDialog from './components/RuleConfirmDialog.vue'
 import RuleFormDialog from './components/RuleFormDialog.vue'
 import { useUrlFilters } from '@/composables/useUrlFilters'
+import { clampPageAfterTotalChange } from '@/utils/clampPage'
 
 // 任务 1 后端 RuleVO 透出的执行统计字段（类型定义暂未同步，本地扩展）
 interface BindingRuleWithStats extends BindingRule {
@@ -295,6 +296,15 @@ const loadRules = async () => {
     })
     
     pagination.total = res.data?.total || 0
+    // 页码收敛（iter169）：删除当前页最后一条时 pagination.page 不变 → 请求到空页。
+    {
+      const fixedPage = clampPageAfterTotalChange(pagination.page, pagination.total, pagination.pageSize)
+      if (fixedPage !== pagination.page) {
+        pagination.page = fixedPage
+        await loadRules()
+        return
+      }
+    }
   } catch (error) {
     console.error('加载规则列表失败:', error)
     loadError.value = '绑定规则加载失败'
