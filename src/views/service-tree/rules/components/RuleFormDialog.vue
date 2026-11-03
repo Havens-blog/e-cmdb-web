@@ -343,18 +343,24 @@ const bindStatusLabel = (status: string) => BIND_STATUS_META[status]?.label ?? s
 const bindStatusTagType = (status: string) => BIND_STATUS_META[status]?.type ?? 'info'
 
 // 校验条件完整性（试运行与保存共用）
+// iter159：原来「请完善匹配条件」「请填写条件值」不指明是**哪一行**。
+// 用户加了 3 个条件、只有第 2 个漏了字段时，看到一句笼统的 toast 只能逐行自查。
+// 改为带行号，并把措辞点明缺的是什么（字段/操作符 vs 条件值）。
 const validateConditions = (): boolean => {
   if (form.conditions.length === 0) {
     ElMessage.warning('请至少添加一个匹配条件')
     return false
   }
-  for (const condition of form.conditions) {
+  // 用 forEach 的第二个参数拿下标，避免 `form.conditions[i]` 索引访问被 TS 判为 possibly undefined
+  for (const [i, condition] of form.conditions.entries()) {
+    // 用「第 N 个」而不是「第 N 行」：这里是一组条件卡片，不是表格行
+    const at = `第 ${i + 1} 个条件`
     if (!condition.field || !condition.operator) {
-      ElMessage.warning('请完善匹配条件')
+      ElMessage.warning(`${at}未填完整：请选择字段和操作符`)
       return false
     }
     if (condition.operator !== 'exists' && !condition.value) {
-      ElMessage.warning('请填写条件值')
+      ElMessage.warning(`${at}缺少条件值`)
       return false
     }
   }
