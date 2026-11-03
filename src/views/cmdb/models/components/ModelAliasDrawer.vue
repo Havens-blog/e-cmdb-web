@@ -60,7 +60,9 @@ async function handleDelete(row: ModelAlias) {
     try {
         await ElMessageBox.confirm(`删除映射「${row.alias_uid} → ${row.model_uid}」？删除后同步写入将恢复为孤儿实例。`, '删除映射', { type: 'warning' })
         await deleteModelAliasApi(row.alias_uid)
-        ElMessage.success('已删除')
+        // 与全站其余 29 处删除成功提示统一为「X成功」式（本处原为「已删除」，
+        // 是全站仅有的 3 处纯风格分歧之一，零信息差异）。见 iter156。
+        ElMessage.success('删除成功')
         await load()
     } catch { /* 取消 */ }
 }
