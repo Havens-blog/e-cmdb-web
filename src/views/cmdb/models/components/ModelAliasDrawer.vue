@@ -3,6 +3,7 @@
 // 支持列表/新增/删除/存量迁移。
 import { computed, ref, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { buildMigrateConfirmText } from './migrateConfirmText'
 import { Delete, RefreshRight } from '@element-plus/icons-vue'
 import { listModelAliasesApi, createModelAliasApi, deleteModelAliasApi, migrateModelAliasesApi, type ModelAlias, type AliasMigrationResp } from '@/api/model-alias'
 import { listCmdbModelsApi } from '@/api'
@@ -69,7 +70,8 @@ async function handleDelete(row: ModelAlias) {
 
 async function handleMigrate() {
     try {
-        await ElMessageBox.confirm('按映射批量改写存量实例的 model_uid（目标已存在同资产的副本会被删除）？', '执行存量迁移', { type: 'warning' })
+        // 二次确认说明影响范围（iter164）：文案由 buildMigrateConfirmText 生成（便于单测两个分支）
+    await ElMessageBox.confirm(buildMigrateConfirmText(aliases.value.length), '执行存量迁移', { type: 'warning' })
     } catch { return }
     migrating.value = true
     try {
