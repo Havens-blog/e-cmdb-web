@@ -29,6 +29,18 @@
       <el-input v-model="form.asset_name" placeholder="资产名称" />
     </el-form-item>
 
+    <el-form-item label="来源" prop="source">
+      <el-select v-model="form.source" placeholder="数据来源（可选）" clearable style="width: 100%">
+        <el-option label="同步" value="sync" />
+        <el-option label="手工" value="manual" />
+        <el-option label="导入" value="import" />
+      </el-select>
+    </el-form-item>
+
+    <el-form-item label="责任人" prop="owner">
+      <el-input v-model="form.owner" placeholder="责任人（可选，如工号/用户名）" />
+    </el-form-item>
+
     <!-- 租户由登录会话决定，新建时不由用户填写；仅在编辑既有实例时只读展示 -->
     <el-form-item v-if="props.isEdit" label="租户ID" prop="tenant_id">
       <el-input v-model="form.tenant_id" disabled />
@@ -154,6 +166,8 @@ const form = reactive({
   // 后端 InstanceVO.tenant_id 为 int64（number）；租户由会话决定，本字段仅在编辑时只读回显
   tenant_id: undefined as number | undefined,
   account_id: undefined as number | undefined,
+  source: '' as string,
+  owner: '' as string,
 })
 
 const attributeList = ref<{ key: string; value: string }[]>([])
@@ -291,6 +305,8 @@ const reset = () => {
   form.asset_name = ''
   form.tenant_id = undefined
   form.account_id = undefined
+  form.source = ''
+  form.owner = ''
   attributeList.value = []
   // 新建时清空模型字段值与「已加载模型」标记
   for (const k of Object.keys(attrValues)) delete attrValues[k]
@@ -311,6 +327,8 @@ watch(
       form.asset_name = val.asset_name || ''
       form.tenant_id = val.tenant_id
       form.account_id = val.account_id
+      form.source = val.source || ''
+      form.owner = val.owner || ''
 
       // 解析属性
       if (val.attributes) {
@@ -459,6 +477,8 @@ const submit = async () => {
     await updateCmdbInstanceApi(props.instance.id, {
       asset_name: form.asset_name || undefined,
       attributes: Object.keys(attributes).length > 0 ? attributes : undefined,
+      source: form.source || undefined,
+      owner: form.owner || undefined,
     })
   } else {
     // 后端 CreateInstanceReq 字段名为 model_uid（必填）；租户由会话 claims 决定，
@@ -469,6 +489,8 @@ const submit = async () => {
       asset_name: form.asset_name || undefined,
       account_id: form.account_id,
       attributes: Object.keys(attributes).length > 0 ? attributes : undefined,
+      source: form.source || undefined,
+      owner: form.owner || undefined,
     })
   }
 }
