@@ -186,6 +186,14 @@
             <template v-else-if="col.key === 'update_time'">
               {{ formatTime(row.update_time) }}
             </template>
+            <!-- 来源 -->
+            <template v-else-if="col.key === 'source'">
+              <span>{{ sourceLabel(row.source) }}</span>
+            </template>
+            <!-- 责任人 -->
+            <template v-else-if="col.key === 'owner'">
+              <span>{{ row.owner || '-' }}</span>
+            </template>
             <!-- 标签 -->
             <template v-else-if="col.key === 'tags'">
               <span class="tags-text">{{ formatTags(row.attributes?.tags) }}</span>
@@ -400,6 +408,8 @@ const defaultColumnSettings: ColumnConfig[] = [
   { key: 'asset_id', label: '资产ID', width: 200, visible: true },
   { key: 'account', label: '云账号', width: 120, visible: false },
   { key: 'zone', label: '可用区', width: 120, visible: false },
+  { key: 'source', label: '来源', width: 90, visible: false },
+  { key: 'owner', label: '责任人', width: 110, visible: false },
   { key: 'create_time', label: '创建时间', width: 160, visible: true },
   { key: 'update_time', label: '更新时间', width: 160, visible: false },
   { key: 'tags', label: '标签', width: 150, visible: false },
@@ -502,6 +512,14 @@ const getStatusLabel = (status: string) => {
 
 // 格式化时间（毫秒时间戳；create_time/update_time 均为 Unix 毫秒，勿再 ×1000）
 const formatTime = (time: number | string | undefined) => formatTimestamp(time)
+
+// 来源中文名：sync/manual/import 映射，未识别回退原值，空显示「未知」
+const SOURCE_LABELS: Record<string, string> = {
+  sync: '同步',
+  manual: '手工',
+  import: '导入',
+}
+const sourceLabel = (s: string | undefined) => (s ? (SOURCE_LABELS[s] || s) : '未知')
 
 // 格式化标签
 const formatTags = (tags: Record<string, string> | undefined) => {

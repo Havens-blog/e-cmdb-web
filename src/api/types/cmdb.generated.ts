@@ -96,6 +96,8 @@ export interface CreateInstanceReq {
     asset_name?: string
     attributes?: Record<string, any>
     model_uid: string
+    owner?: string
+    source?: string
 }
 
 export interface CreateModelGroupReq {
@@ -154,6 +156,8 @@ export interface InstanceVO {
     create_time: number
     id: number
     model_uid: string
+    owner: string
+    source: string
     tenant_id: number
     update_time: number
 }
@@ -243,6 +247,8 @@ export interface UpdateAttributeReq {
 export interface UpdateInstanceReq {
     asset_name?: string
     attributes?: Record<string, any>
+    owner?: string
+    source?: string
 }
 
 export interface UpdateModelGroupReq {
