@@ -283,5 +283,7 @@ export interface UpsertInstanceReq {
     asset_name?: string
     attributes?: Record<string, any>
     model_uid: string
+    owner?: string
+    source?: string
 }
 

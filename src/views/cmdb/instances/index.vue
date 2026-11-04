@@ -98,6 +98,9 @@
         <el-button size="small" circle @click="handleRefresh" title="刷新">
           <el-icon><Refresh /></el-icon>
         </el-button>
+        <el-button size="small" circle @click="importDialogVisible = true" title="导入">
+          <el-icon><Upload /></el-icon>
+        </el-button>
         <el-button size="small" circle @click="exportDialogVisible = true" title="导出">
           <el-icon><Download /></el-icon>
         </el-button>
@@ -281,6 +284,12 @@
       :config="exportConfig"
     />
 
+    <!-- 导入对话框 -->
+    <ImportInstancesDialog
+      v-model:visible="importDialogVisible"
+      @imported="handleImported"
+    />
+
     <!-- 自定义列对话框 -->
     <ColumnSettingsDialog
       v-model:visible="columnSettingsVisible"
@@ -301,12 +310,13 @@ import { fetchAllRows } from '@/utils/exportAll'
 import { formatTimestamp } from '@/utils/time'
 import { resolveAssetTypeKey, resolveAssetTypeLabel } from '@/utils/assetType'
 import { buildInstanceListParams } from '@/utils/instanceQuery'
-import { Download, Plus, Refresh, Search, Setting, WarningFilled } from '@element-plus/icons-vue'
+import { Download, Plus, Refresh, Search, Setting, Upload, WarningFilled } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import ColumnSettingsDialog, { type ColumnConfig } from './components/ColumnSettingsDialog.vue'
 import InstanceForm from './components/InstanceForm.vue'
+import ImportInstancesDialog from './components/ImportInstancesDialog.vue'
 
 const route = useRoute()
 // 用于把筛选/排序/分页同步到 URL（router.replace，不新增历史记录）
@@ -355,6 +365,7 @@ const formRef = ref()
 const currentInstance = ref<InstanceVO | null>(null)
 const selectedIds = ref<number[]>([])
 const exportDialogVisible = ref(false)
+const importDialogVisible = ref(false)
 const columnSettingsVisible = ref(false)
 
 // 数据
@@ -817,6 +828,11 @@ const handleAssetTypeChange = () => {
 
 // 刷新
 const handleRefresh = () => {
+  fetchInstances()
+}
+
+// 导入成功后刷新列表
+const handleImported = () => {
   fetchInstances()
 }
 
