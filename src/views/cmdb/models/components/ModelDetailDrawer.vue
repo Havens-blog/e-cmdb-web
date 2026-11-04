@@ -107,7 +107,7 @@
   </el-drawer>
 
   <!-- 属性表单对话框 -->
-  <el-dialog v-model="attrDialogVisible" :title="isEditAttr ? '编辑属性' : '新增属性'" width="560px">
+  <el-dialog v-model="attrDialogVisible" :title="isEditAttr ? '编辑属性' : '新增属性'" width="560px" :close-on-click-modal="false">
     <el-form ref="attrFormRef" :model="attrForm" :rules="attrRules" label-width="90px">
       <el-form-item label="字段标识" prop="field_uid" v-if="!isEditAttr">
         <el-input v-model="attrForm.field_uid" placeholder="如 instance_id" />
@@ -151,7 +151,7 @@
   </el-dialog>
 
   <!-- 分组表单对话框 -->
-  <el-dialog v-model="groupDialogVisible" :title="isEditGroup ? '编辑分组' : '新增分组'" width="480px">
+  <el-dialog v-model="groupDialogVisible" :title="isEditGroup ? '编辑分组' : '新增分组'" width="480px" :close-on-click-modal="false">
     <el-form ref="groupFormRef" :model="groupForm" :rules="groupRules" label-width="80px">
       <el-form-item label="标识" prop="uid" v-if="!isEditGroup">
         <el-input v-model="groupForm.uid" placeholder="分组标识" />
