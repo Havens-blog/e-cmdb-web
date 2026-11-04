@@ -86,6 +86,15 @@
         </el-tag>
       </div>
       <div class="filters-right">
+        <el-button
+          v-if="selectedIds.length"
+          size="small"
+          type="danger"
+          plain
+          @click="handleBatchDelete"
+        >
+          批量删除 ({{ selectedIds.length }})
+        </el-button>
         <el-button size="small" circle @click="handleRefresh" title="刷新">
           <el-icon><Refresh /></el-icon>
         </el-button>
@@ -274,7 +283,7 @@
 </template>
 
 <script setup lang="ts">
-import { deleteCmdbInstanceApi, listCmdbInstancesApi, listCmdbModelsApi } from '@/api'
+import { batchDeleteCmdbInstancesApi, deleteCmdbInstanceApi, listCmdbInstancesApi, listCmdbModelsApi } from '@/api'
 import type { InstanceVO, ModelVO } from '@/api/types/cmdb'
 import { AssetExportDialog, type ExportFieldConfig } from '@haven/ui/AssetExportDialog'
 import { IconFont } from '@haven/ui/IconFont'
@@ -897,6 +906,35 @@ const handleDelete = async (row: InstanceVO) => {
   } catch (error: any) {
     if (error !== 'cancel') {
       ElMessage.error(error.message || '删除失败')
+    }
+  }
+}
+
+// 批量删除：逐条结果、不回滚（语义与单条删除一致：级联解除关系 + 审计）
+const handleBatchDelete = async () => {
+  if (!selectedIds.value.length) return
+  try {
+    await ElMessageBox.confirm(
+      `确定要批量删除选中的 ${selectedIds.value.length} 个实例吗？此操作不可撤销。`,
+      '批量删除确认',
+      { type: 'warning', confirmButtonText: '删除', confirmButtonClass: 'el-button--danger' },
+    )
+    const resp = await batchDeleteCmdbInstancesApi(selectedIds.value)
+    const data = resp.data
+    const deleted = data?.deleted?.length ?? 0
+    const failed = data?.failed?.length ?? 0
+    if (failed > 0) {
+      // 逐条结果：明确告知失败数与首条失败原因，而非笼统「成功/失败」
+      const first = data.failed[0]
+      ElMessage.warning(`已删除 ${deleted} 个，失败 ${failed} 个（如 id=${first?.id}: ${first?.error}）`)
+    } else {
+      ElMessage.success(`已删除 ${deleted} 个实例`)
+    }
+    selectedIds.value = []
+    fetchInstances()
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      ElMessage.error(error?.message || '批量删除失败')
     }
   }
 }
