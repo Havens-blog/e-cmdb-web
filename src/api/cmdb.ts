@@ -218,6 +218,22 @@ export function deleteCmdbInstanceApi(id: number) {
     })
 }
 
+/** 批量删除实例的结果（逐条结果，不回滚） */
+export interface BatchDeleteResult {
+    deleted: number[]
+    failed: { id: number; error: string }[]
+    total: number
+}
+
+/** 批量删除实例 */
+export function batchDeleteCmdbInstancesApi(ids: number[]) {
+    return instance.post<BatchDeleteResult>({
+        url: `/cmdb/instances/batch-delete`,
+        data: { ids },
+        interceptorsToOnce: createCmdbApiInterceptor()
+    })
+}
+
 
 // ==================== 模型关系类型 API ====================
 

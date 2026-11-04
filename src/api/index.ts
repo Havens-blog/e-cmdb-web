@@ -8,6 +8,7 @@
 
 // ==================== CMDB 管理 API ====================
 export {
+    batchDeleteCmdbInstancesApi,
     createBatchInstanceRelationApi,
     createCmdbInstanceApi,
     createCmdbInstanceBatchApi,
