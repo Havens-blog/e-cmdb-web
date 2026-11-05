@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { listChangesApi, getChangeSummaryApi, type ChangeRecord, type ChangeSummary } from '@/api/audit'
+import { listChangesApi, getChangeSummaryApi, listAuditLogsApi, type ChangeRecord, type ChangeSummary, type AuditLog } from '@/api/audit'
 import { formatTimestamp } from '@/utils/time'
 import { Search, Timer, RefreshRight, WarningFilled } from '@element-plus/icons-vue'
 
@@ -22,6 +22,38 @@ const query = ref({
     timeRange: null as [Date, Date] | null,
 })
 const page = ref({ offset: 0, limit: 20 })
+
+// ==================== 审计类型 tab ====================
+// 变更审计（ChangeRecord，字段级 old→new）+ 操作审计（AuditLog，API 级），
+// 两类同属「全平台审计」，聚合到本页用 tab 切换。
+const activeTab = ref<'change' | 'operation'>('change')
+const auditLogs = ref<AuditLog[]>([])
+const auditLogsTotal = ref(0)
+const auditLogsLoading = ref(false)
+const auditLogsError = ref<string | null>(null)
+const auditLogsPage = ref({ offset: 0, limit: 20 })
+
+async function loadAuditLogs() {
+    auditLogsLoading.value = true
+    auditLogsError.value = null
+    try {
+        const resp = await listAuditLogsApi({
+            offset: auditLogsPage.value.offset,
+            limit: auditLogsPage.value.limit,
+        })
+        auditLogs.value = resp.data.items
+        auditLogsTotal.value = resp.data.total
+    } catch (e: any) {
+        auditLogsError.value = '操作审计加载失败'
+        ElMessage.error(e?.message || '加载操作审计失败')
+    } finally {
+        auditLogsLoading.value = false
+    }
+}
+
+function handleTabChange() {
+    if (activeTab.value === 'operation') loadAuditLogs()
+}
 
 // 顶部统计：按云厂商分布 Top（真实 ChangeSummary.by_provider）
 const providerStats = ref<Array<{ name: string; count: number }>>([])
@@ -129,11 +161,14 @@ onMounted(load)
   <div class="audit" v-loading="loading">
     <div class="page-head">
       <div>
-        <h1 class="page-title">变更审计</h1>
-        <p class="page-subtitle">追溯每一次配置变更（复用 e-cam-service 审计能力）</p>
+        <h1 class="page-title">审计日志</h1>
+        <p class="page-subtitle">全平台审计：变更审计（字段级）与操作审计（API 级）统一入口</p>
       </div>
       <el-button class="refresh-btn" :icon="RefreshRight" circle @click="load" />
     </div>
+
+    <el-tabs v-model="activeTab" @tab-change="handleTabChange">
+      <el-tab-pane label="变更审计" name="change">
 
     <!-- 汇总：总数 + 云厂商分布。统计失败不影响列表使用，给出明确占位而非静默消失 -->
     <div class="summary-bar" v-if="summary">
@@ -227,6 +262,58 @@ onMounted(load)
       <el-icon :size="40"><Timer /></el-icon>
       <p>暂无变更记录（可输入资产 ID 精确查询）</p>
     </div>
+
+      </el-tab-pane>
+
+      <!-- 操作审计：API 级操作（谁调了什么接口、结果如何）-->
+      <el-tab-pane label="操作审计" name="operation">
+        <el-table v-loading="auditLogsLoading" :data="auditLogs" style="width: 100%">
+          <el-table-column label="时间" width="170">
+            <template #default="{ row }">{{ fmtTime(row.ctime) }}</template>
+          </el-table-column>
+          <el-table-column label="操作者" width="130">
+            <template #default="{ row }">{{ row.operator_name || row.operator_id || '—' }}</template>
+          </el-table-column>
+          <el-table-column label="操作" width="160" show-overflow-tooltip>
+            <template #default="{ row }">{{ row.operation_type }}</template>
+          </el-table-column>
+          <el-table-column label="接口" min-width="200" show-overflow-tooltip>
+            <template #default="{ row }">{{ row.http_method }} {{ row.api_path }}</template>
+          </el-table-column>
+          <el-table-column label="结果" width="90">
+            <template #default="{ row }">
+              <el-tag size="small" :type="row.result === 'success' ? 'success' : (row.result === 'failed' ? 'danger' : 'info')">
+                {{ row.result }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="状态码" width="90" prop="status_code" />
+          <el-table-column label="耗时" width="90">
+            <template #default="{ row }">{{ row.duration_ms }}ms</template>
+          </el-table-column>
+        </el-table>
+
+        <div v-if="auditLogsTotal > 0" class="pagination">
+          <el-pagination
+            layout="total, prev, pager, next"
+            :total="auditLogsTotal"
+            :page-size="auditLogsPage.limit"
+            :current-page="auditLogsPage.offset / auditLogsPage.limit + 1"
+            @current-change="(p: number) => { auditLogsPage.offset = (p - 1) * auditLogsPage.limit; loadAuditLogs() }"
+          />
+        </div>
+
+        <div v-if="!auditLogsLoading && auditLogsError" class="audit-empty-error" role="alert">
+          <el-icon :size="40"><WarningFilled /></el-icon>
+          <p class="audit-error-title">{{ auditLogsError }}</p>
+          <el-button size="small" @click="loadAuditLogs">重试</el-button>
+        </div>
+        <div v-else-if="!auditLogsLoading && auditLogs.length === 0" class="empty-hint">
+          <el-icon :size="40"><Timer /></el-icon>
+          <p>暂无操作审计记录</p>
+        </div>
+      </el-tab-pane>
+    </el-tabs>
   </div>
 </template>
 
