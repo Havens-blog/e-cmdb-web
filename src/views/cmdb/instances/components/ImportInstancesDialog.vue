@@ -31,7 +31,10 @@
         <el-icon class="el-icon--upload"><UploadFilled /></el-icon>
         <div class="el-upload__text">拖拽文件到此处，或<em>点击选择</em></div>
         <template #tip>
-          <div class="el-upload__tip">仅支持 .csv / .tsv / .txt 文本文件，导入走 upsert（幂等，不产生重复）。</div>
+          <div class="el-upload__tip">
+          仅支持 .csv / .tsv / .txt 文本文件，导入走 upsert（幂等，不产生重复）。
+          <el-button link type="primary" size="small" @click="downloadTemplate">下载模板</el-button>
+        </div>
         </template>
       </el-upload>
 
@@ -102,7 +105,8 @@ const parsedInstances = computed<UpsertInstanceReq[]>(() => {
       asset_id: assetId,
       asset_name: (row.asset_name || '').trim() || undefined,
       account_id: row.account_id ? Number(row.account_id) : undefined,
-      source: (row.source || '').trim() || undefined,
+      // UI 导入路径：CSV 未显式提供来源时默认标记 import（导入的实例来源就是导入）
+      source: (row.source || '').trim() || 'import',
       owner: (row.owner || '').trim() || undefined,
       attributes: Object.keys(attrs).length ? attrs : undefined,
     })
@@ -141,6 +145,19 @@ function handleFile(file: UploadFile) {
 function clearFile() {
   parsed.value = null
   errors.value = []
+}
+
+/** 下载导入模板 CSV（表头 + 一行示例），免去用户照文档手拼表头 */
+function downloadTemplate() {
+  const header = 'model_uid,asset_id,asset_name,account_id,source,owner,note'
+  const example = 'huawei_ecs,i-bp1234567890,示例主机,0,manual,zhangsan,示例备注'
+  const blob = new Blob(['\uFEFF' + header + '\n' + example + '\n'], { type: 'text/csv;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'cmdb-instance-import-template.csv'
+  a.click()
+  URL.revokeObjectURL(url)
 }
 
 function close() {
