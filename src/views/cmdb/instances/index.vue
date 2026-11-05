@@ -792,12 +792,25 @@ const exportConfig: ExportFieldConfig<InstanceVO> = {
     { key: 'zone', label: '可用区' },
     { key: 'status', label: '状态' },
     { key: 'cloud_account_name', label: '云账号' },
+    { key: 'source', label: '来源' },
+    { key: 'owner', label: '责任人' },
     { key: 'creation_time', label: '创建时间' },
+    { key: 'update_time', label: '更新时间' },
     { key: 'tags', label: '标签' },
   ],
   getValue: (instance: InstanceVO, key: string): string => {
     if (key === 'asset_id' || key === 'asset_name') {
       return instance[key] || ''
+    }
+    if (key === 'source') {
+      // 与列表列同口径：sync/manual/import → 中文，空显示未知
+      return sourceLabel(instance.source)
+    }
+    if (key === 'owner') {
+      return instance.owner || ''
+    }
+    if (key === 'update_time') {
+      return instance.update_time ? formatTimestamp(instance.update_time, true) : ''
     }
     if (key === 'uid') {
       // 资产类型解析抽到 @/utils/assetType（含单测），避免再次出现
