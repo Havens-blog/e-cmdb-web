@@ -13,6 +13,8 @@ export interface InstanceFilterState {
     provider?: string
     region?: string
     model_uid?: string
+    source?: string
+    owner?: string
 }
 
 /**
@@ -50,6 +52,10 @@ export function buildInstanceListParams(
     if (filters.keyword) params.asset_name = filters.keyword
     if (filters.provider) params.provider = filters.provider
     if (filters.region) params.region = filters.region
+
+    // 来源 / 责任人：顶层字段精确匹配（后端 source / owner 参数，2026-11-04 加字段的筛选闭环）
+    if (filters.source) params.source = filters.source
+    if (filters.owner) params.owner = filters.owner
 
     // 资产类型优先于模型下钻：用户在下拉中的显式选择应覆盖 URL 带入的 model_uid
     const modelUID = filters.asset_type || filters.model_uid
