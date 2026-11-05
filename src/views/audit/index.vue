@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { listChangesApi, getChangeSummaryApi, listAuditLogsApi, AUDIT_OPERATION_TYPES, type ChangeRecord, type ChangeSummary, type AuditLog } from '@/api/audit'
+import { buildAuditLogParams } from '@/utils/auditLogParams'
 import { formatTimestamp } from '@/utils/time'
 import { Search, Timer, RefreshRight, WarningFilled } from '@element-plus/icons-vue'
 
@@ -32,19 +33,19 @@ const auditLogsTotal = ref(0)
 const auditLogsLoading = ref(false)
 const auditLogsError = ref<string | null>(null)
 const auditLogsPage = ref({ offset: 0, limit: 20 })
-/** 操作审计筛选：接口路径前缀 + 操作类型（均为后端 AuditLogFilter 支持的参数） */
-const opQuery = ref({ api_path: '', operation_type: '' })
+/** 操作审计筛选：接口路径前缀 + 操作类型 + 时间范围（均为后端 AuditLogFilter 支持的参数） */
+const opQuery = ref({ api_path: '', operation_type: '', timeRange: null as [Date, Date] | null })
 
 async function loadAuditLogs() {
     auditLogsLoading.value = true
     auditLogsError.value = null
     try {
-        const params: Record<string, unknown> = {
-            offset: auditLogsPage.value.offset,
-            limit: auditLogsPage.value.limit,
-        }
-        if (opQuery.value.api_path.trim()) params.api_path = opQuery.value.api_path.trim()
-        if (opQuery.value.operation_type) params.operation_type = opQuery.value.operation_type
+        // 参数构造抽成纯函数（utils/auditLogParams），接线由单测锁定
+        const params = buildAuditLogParams(
+            { api_path: opQuery.value.api_path, operation_type: opQuery.value.operation_type, timeRange: opQuery.value.timeRange },
+            auditLogsPage.value.offset,
+            auditLogsPage.value.limit,
+        )
         const resp = await listAuditLogsApi(params)
         auditLogs.value = resp.data.items
         auditLogsTotal.value = resp.data.total
@@ -293,6 +294,14 @@ onMounted(load)
           <el-select v-model="opQuery.operation_type" placeholder="操作类型" class="q-input q-type" clearable>
             <el-option v-for="t in AUDIT_OPERATION_TYPES" :key="t.value" :label="t.label" :value="t.value" />
           </el-select>
+          <el-date-picker
+            v-model="opQuery.timeRange"
+            type="datetimerange"
+            start-placeholder="开始时间"
+            end-placeholder="结束时间"
+            value-format="x"
+            class="q-range"
+          />
           <el-button type="primary" :icon="Search" @click="searchAuditLogs">查询</el-button>
         </div>
 
@@ -376,6 +385,7 @@ onMounted(load)
 .q-input { width: 220px; }
 .q-path { width: 300px; }
 .q-type { width: 170px; }
+.q-range { width: 340px; }
 .q-range { max-width: 380px; }
 
 .asset-cell { display: flex; flex-direction: column; gap: 2px; }
