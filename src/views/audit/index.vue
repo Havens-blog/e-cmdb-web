@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { listChangesApi, getChangeSummaryApi, listAuditLogsApi, AUDIT_OPERATION_TYPES, type ChangeRecord, type ChangeSummary, type AuditLog } from '@/api/audit'
+import { listChangesApi, getChangeSummaryApi, listAuditLogsApi, type ChangeRecord, type ChangeSummary, type AuditLog } from '@/api/audit'
 import { buildAuditLogParams } from '@/utils/auditLogParams'
 import { formatTimestamp } from '@/utils/time'
 import { Search, Timer, RefreshRight, WarningFilled } from '@element-plus/icons-vue'
@@ -291,9 +291,13 @@ onMounted(load)
             clearable
             @keyup.enter="searchAuditLogs"
           />
-          <el-select v-model="opQuery.operation_type" placeholder="操作类型" class="q-input q-type" clearable>
-            <el-option v-for="t in AUDIT_OPERATION_TYPES" :key="t.value" :label="t.label" :value="t.value" />
-          </el-select>
+          <el-input
+            v-model="opQuery.operation_type"
+            placeholder="操作类型（精确，如 log_search）"
+            class="q-input q-type"
+            clearable
+            @keyup.enter="searchAuditLogs"
+          />
           <el-date-picker
             v-model="opQuery.timeRange"
             type="datetimerange"
