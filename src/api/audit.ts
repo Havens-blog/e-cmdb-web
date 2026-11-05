@@ -105,6 +105,7 @@ export function getChangeSummaryApi(params: {
  * 变更审计回答「改了哪个字段」，操作审计回答「谁调了什么接口、结果如何」。
  */
 export function listAuditLogsApi(params: {
+    operation_type?: string
     operator_id?: string
     http_method?: string
     api_path?: string
@@ -115,3 +116,15 @@ export function listAuditLogsApi(params: {
 }) {
     return instance.get<AuditLogList>({ url: '/cam/audit/logs', params })
 }
+
+/** 操作审计的 operation_type 常见取值（对齐 e-cam AuditOperationType） */
+export const AUDIT_OPERATION_TYPES = [
+    { value: 'api_generic', label: '通用 API' },
+    { value: 'api_account_create', label: '创建云账号' },
+    { value: 'api_account_update', label: '更新云账号' },
+    { value: 'api_account_delete', label: '删除云账号' },
+    { value: 'api_asset_sync', label: '资产同步' },
+    { value: 'api_task_create', label: '创建任务' },
+    { value: 'log_search', label: '日志检索' },
+    { value: 'log_export', label: '日志导出' },
+]

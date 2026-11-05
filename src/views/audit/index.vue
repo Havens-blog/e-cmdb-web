@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { listChangesApi, getChangeSummaryApi, listAuditLogsApi, type ChangeRecord, type ChangeSummary, type AuditLog } from '@/api/audit'
+import { listChangesApi, getChangeSummaryApi, listAuditLogsApi, AUDIT_OPERATION_TYPES, type ChangeRecord, type ChangeSummary, type AuditLog } from '@/api/audit'
 import { formatTimestamp } from '@/utils/time'
 import { Search, Timer, RefreshRight, WarningFilled } from '@element-plus/icons-vue'
 
@@ -32,15 +32,20 @@ const auditLogsTotal = ref(0)
 const auditLogsLoading = ref(false)
 const auditLogsError = ref<string | null>(null)
 const auditLogsPage = ref({ offset: 0, limit: 20 })
+/** 操作审计筛选：接口路径前缀 + 操作类型（均为后端 AuditLogFilter 支持的参数） */
+const opQuery = ref({ api_path: '', operation_type: '' })
 
 async function loadAuditLogs() {
     auditLogsLoading.value = true
     auditLogsError.value = null
     try {
-        const resp = await listAuditLogsApi({
+        const params: Record<string, unknown> = {
             offset: auditLogsPage.value.offset,
             limit: auditLogsPage.value.limit,
-        })
+        }
+        if (opQuery.value.api_path.trim()) params.api_path = opQuery.value.api_path.trim()
+        if (opQuery.value.operation_type) params.operation_type = opQuery.value.operation_type
+        const resp = await listAuditLogsApi(params)
         auditLogs.value = resp.data.items
         auditLogsTotal.value = resp.data.total
     } catch (e: any) {
@@ -49,6 +54,12 @@ async function loadAuditLogs() {
     } finally {
         auditLogsLoading.value = false
     }
+}
+
+/** 操作审计筛选：条件变化重置到第一页 */
+function searchAuditLogs() {
+    auditLogsPage.value.offset = 0
+    loadAuditLogs()
 }
 
 function handleTabChange() {
@@ -227,6 +238,9 @@ onMounted(load)
           </div>
         </template>
       </el-table-column>
+      <el-table-column label="操作者" width="110" show-overflow-tooltip>
+        <template #default="{ row }">{{ row.operator || '—' }}</template>
+      </el-table-column>
       <el-table-column prop="change_source" label="来源" width="110" show-overflow-tooltip />
       <el-table-column label="云厂商 / 区域" width="150">
         <template #default="{ row }">
@@ -267,6 +281,21 @@ onMounted(load)
 
       <!-- 操作审计：API 级操作（谁调了什么接口、结果如何）-->
       <el-tab-pane label="操作审计" name="operation">
+        <div class="query-bar">
+          <el-input
+            v-model="opQuery.api_path"
+            placeholder="接口路径（前缀匹配，如 /api/v1/cam）"
+            class="q-input q-path"
+            :prefix-icon="Search"
+            clearable
+            @keyup.enter="searchAuditLogs"
+          />
+          <el-select v-model="opQuery.operation_type" placeholder="操作类型" class="q-input q-type" clearable>
+            <el-option v-for="t in AUDIT_OPERATION_TYPES" :key="t.value" :label="t.label" :value="t.value" />
+          </el-select>
+          <el-button type="primary" :icon="Search" @click="searchAuditLogs">查询</el-button>
+        </div>
+
         <el-table v-loading="auditLogsLoading" :data="auditLogs" style="width: 100%">
           <el-table-column label="时间" width="170">
             <template #default="{ row }">{{ fmtTime(row.ctime) }}</template>
@@ -345,6 +374,8 @@ onMounted(load)
 
 .query-bar { display: flex; gap: 12px; margin-bottom: 16px; align-items: center; flex-wrap: wrap; }
 .q-input { width: 220px; }
+.q-path { width: 300px; }
+.q-type { width: 170px; }
 .q-range { max-width: 380px; }
 
 .asset-cell { display: flex; flex-direction: column; gap: 2px; }
