@@ -37,6 +37,32 @@ export interface ChangeList {
     total: number
 }
 
+// ==================== 操作审计（e-cam /api/v1/cam/audit/logs，AuditLog） ====================
+
+/** 操作审计日志（API 级：谁在什么时候调了什么接口、结果如何） */
+export interface AuditLog {
+    id: number
+    operation_type: string
+    operator_id: string
+    operator_name: string
+    tenant_id: number
+    http_method: string
+    api_path: string
+    request_body: string
+    status_code: number
+    result: string
+    request_id: string
+    duration_ms: number
+    client_ip: string
+    user_agent: string
+    ctime: number
+}
+
+export interface AuditLogList {
+    items: AuditLog[]
+    total: number
+}
+
 // ==================== 函数 ====================
 
 /** 查询变更历史 */
@@ -70,4 +96,22 @@ export function getChangeSummaryApi(params: {
         params,
         timeout: 15000,
     })
+}
+
+/**
+ * 查询操作审计日志列表（API 级操作审计，聚合进统一审计面板）。
+ *
+ * 与 listChangesApi（变更审计：字段级 old→new）互补：
+ * 变更审计回答「改了哪个字段」，操作审计回答「谁调了什么接口、结果如何」。
+ */
+export function listAuditLogsApi(params: {
+    operator_id?: string
+    http_method?: string
+    api_path?: string
+    start_time?: number
+    end_time?: number
+    offset?: number
+    limit?: number
+}) {
+    return instance.get<AuditLogList>({ url: '/cam/audit/logs', params })
 }
