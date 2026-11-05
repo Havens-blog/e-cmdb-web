@@ -117,14 +117,9 @@ export function listAuditLogsApi(params: {
     return instance.get<AuditLogList>({ url: '/cam/audit/logs', params })
 }
 
-/** 操作审计的 operation_type 常见取值（对齐 e-cam AuditOperationType） */
-export const AUDIT_OPERATION_TYPES = [
-    { value: 'api_generic', label: '通用 API' },
-    { value: 'api_account_create', label: '创建云账号' },
-    { value: 'api_account_update', label: '更新云账号' },
-    { value: 'api_account_delete', label: '删除云账号' },
-    { value: 'api_asset_sync', label: '资产同步' },
-    { value: 'api_task_create', label: '创建任务' },
-    { value: 'log_search', label: '日志检索' },
-    { value: 'log_export', label: '日志导出' },
-]
+/**
+ * operation_type 说明（实测 2026-11-06）：操作审计的类型是中间件按路由
+ * 动态生成的 `api_<资源>_<动作>` 模式（如 api_log_create / api_topology_create），
+ * **不是**固定枚举——故筛选用文本输入（精确匹配），不做静态下拉
+ * （此前硬编码的 8 项与真实数据几乎不匹配，已删除）。
+ */
