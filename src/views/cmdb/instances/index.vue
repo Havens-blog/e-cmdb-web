@@ -290,6 +290,12 @@
       @imported="handleImported"
     />
 
+    <!-- 通用实例详情抽屉（e-cam-web 未覆盖类型的兜底查看） -->
+    <InstanceInfoDrawer
+      v-model:visible="infoDrawerVisible"
+      :instance="infoDrawerInstance"
+    />
+
     <!-- 自定义列对话框 -->
     <ColumnSettingsDialog
       v-model:visible="columnSettingsVisible"
@@ -317,6 +323,7 @@ import { useRoute, useRouter } from 'vue-router'
 import ColumnSettingsDialog, { type ColumnConfig } from './components/ColumnSettingsDialog.vue'
 import InstanceForm from './components/InstanceForm.vue'
 import ImportInstancesDialog from './components/ImportInstancesDialog.vue'
+import InstanceInfoDrawer from './components/InstanceInfoDrawer.vue'
 
 const route = useRoute()
 // 用于把筛选/排序/分页同步到 URL（router.replace，不新增历史记录）
@@ -367,6 +374,9 @@ const selectedIds = ref<number[]>([])
 const exportDialogVisible = ref(false)
 const importDialogVisible = ref(false)
 const columnSettingsVisible = ref(false)
+// 通用实例详情抽屉：e-cam-web 详情页未覆盖的模型类型的兜底查看入口
+const infoDrawerVisible = ref(false)
+const infoDrawerInstance = ref<InstanceVO | null>(null)
 
 // 数据
 const instances = ref<InstanceVO[]>([])
@@ -878,8 +888,11 @@ const handleViewDetail = (row: InstanceVO) => {
     const search = encodeURIComponent(row.asset_name || row.asset_id || '')
     window.open(`/cam${routeInfo.route}?search=${search}`, '_blank')
   } else {
-    const label = resolveAssetTypeLabel(row.model_uid, modelOptions.value) || assetType
-    ElMessage.warning(`暂不支持查看「${label}」类型的详情`)
+    // e-cam-web 未覆盖的模型类型：打开通用详情抽屉（基本信息 + 全量属性），
+    // 而不是只弹「暂不支持」——属性数据就在手里，用户至少能看到实例内容。
+    // 待 e-cam-web 覆盖该类型后，map 收录即自动恢复跳转富详情页。
+    infoDrawerInstance.value = row
+    infoDrawerVisible.value = true
   }
 }
 
