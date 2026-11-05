@@ -74,6 +74,25 @@
             :value="region"
           />
         </el-select>
+        <el-select
+          v-model="filters.source"
+          placeholder="来源"
+          clearable
+          style="width: 110px"
+          @change="handleSearch"
+        >
+          <el-option label="同步" value="sync" />
+          <el-option label="手工" value="manual" />
+          <el-option label="导入" value="import" />
+        </el-select>
+        <el-input
+          v-model="filters.owner"
+          placeholder="责任人"
+          clearable
+          style="width: 120px"
+          @keyup.enter="handleSearch"
+          @clear="handleSearch"
+        />
         <el-tag
           v-if="filters.model_uid"
           closable
@@ -391,6 +410,8 @@ const filters = reactive({
   provider: '',
   region: '',
   model_uid: '',
+  source: '',
+  owner: '',
 })
 
 // 资产类型下拉选项：由后端模型列表动态生成（替代原硬编码列表）。
@@ -653,6 +674,8 @@ const syncStateToUrl = () => {
   if (filters.keyword) q.keyword = filters.keyword
   if (filters.provider) q.provider = filters.provider
   if (filters.region) q.region = filters.region
+  if (filters.source) q.source = filters.source
+  if (filters.owner) q.owner = filters.owner
   if (sortState.value) {
     const colKey = REVERSE_SORT_MAP[sortState.value.by]
     if (colKey) {
@@ -665,7 +688,7 @@ const syncStateToUrl = () => {
 
   // 保留租户等非本页管理的 query
   const merged: Record<string, any> = { ...route.query }
-  for (const k of ['model_uid', 'keyword', 'provider', 'region', 'sort', 'order', 'size', 'page']) {
+  for (const k of ['model_uid', 'keyword', 'provider', 'region', 'source', 'owner', 'sort', 'order', 'size', 'page']) {
     delete merged[k]
   }
   Object.assign(merged, q)
@@ -690,6 +713,8 @@ const restoreStateFromUrl = () => {
   if (str(q.keyword)) filters.keyword = str(q.keyword)
   if (str(q.provider)) filters.provider = str(q.provider)
   if (str(q.region)) filters.region = str(q.region)
+  if (str(q.source)) filters.source = str(q.source)
+  if (str(q.owner)) filters.owner = str(q.owner)
 
   const sortCol = str(q.sort)
   const sortField = sortCol ? SORTABLE_COLUMN_MAP[sortCol] : undefined

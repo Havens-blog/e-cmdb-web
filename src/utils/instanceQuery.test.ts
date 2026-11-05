@@ -57,4 +57,16 @@ describe('buildInstanceListParams', () => {
         const p = buildInstanceListParams({}, 1, 20)
         expect(p).not.toHaveProperty('model_uid')
     })
+
+    it('source/owner 映射为顶层精确匹配参数', () => {
+        const p = buildInstanceListParams({ source: 'manual', owner: 'zhangsan' }, 1, 20)
+        expect(p.source).toBe('manual')
+        expect(p.owner).toBe('zhangsan')
+    })
+
+    it('source/owner 未设置时不传', () => {
+        const p = buildInstanceListParams({}, 1, 20)
+        expect(p).not.toHaveProperty('source')
+        expect(p).not.toHaveProperty('owner')
+    })
 })
