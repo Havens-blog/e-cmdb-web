@@ -69,6 +69,7 @@ import { ElMessage } from 'element-plus'
 import { UploadFilled } from '@element-plus/icons-vue'
 import { upsertCmdbInstanceBatchApi } from '@/api'
 import { parseTable } from '@/utils/csv'
+import { validateImportRows } from '@/utils/importValidation'
 import type { UploadFile } from 'element-plus'
 import type { UpsertInstanceReq } from '@/api/types/cmdb.generated'
 
@@ -84,47 +85,19 @@ const parsed = ref<{ headers: string[]; rows: Record<string, string>[]; total: n
 const errors = ref<string[]>([])
 const importing = ref(false)
 
-// 固定列 → 顶层字段，其余列 → attributes
-const FIXED_COLS = ['model_uid', 'asset_id', 'asset_name', 'account_id', 'source', 'owner']
-
 const knownModelUids = computed(() => new Set(props.models.map(m => m.uid)))
 
 const parsedInstances = computed<UpsertInstanceReq[]>(() => {
   if (!parsed.value) return []
-  const out: UpsertInstanceReq[] = []
-  const errs: string[] = []
-  for (const [i, row] of parsed.value.rows.entries()) {
-    const modelUid = (row.model_uid || '').trim()
-    const assetId = (row.asset_id || '').trim()
-    if (!modelUid || !assetId) {
-      errs.push(`第 ${i + 2} 行：缺少 model_uid 或 asset_id`)
-      continue
-    }
-    // 模型存在性预校验：upsert-batch 对不存在的模型会静默创建孤儿实例
-    // （实测 2026-11-06：code=0、无同步问题记录），必须在导入前拦下
-    if (!knownModelUids.value.has(modelUid)) {
-      errs.push(`第 ${i + 2} 行：模型「${modelUid}」不存在（请先在资源模型中创建）`)
-      continue
-    }
-    const attrs: Record<string, any> = {}
-    for (const h of parsed.value.headers) {
-      if (FIXED_COLS.includes(h)) continue
-      const v = row[h]
-      if (v !== undefined && v !== '') attrs[h] = v
-    }
-    out.push({
-      model_uid: modelUid,
-      asset_id: assetId,
-      asset_name: (row.asset_name || '').trim() || undefined,
-      account_id: row.account_id ? Number(row.account_id) : undefined,
-      // UI 导入路径：CSV 未显式提供来源时默认标记 import（导入的实例来源就是导入）
-      source: (row.source || '').trim() || 'import',
-      owner: (row.owner || '').trim() || undefined,
-      attributes: Object.keys(attrs).length ? attrs : undefined,
-    })
-  }
+  // 校验与映射抽成纯函数（utils/importValidation，单测锁定）：
+  // knownModelUids 为空集合表示模型列表不可用 → 跳过存在性校验（优雅降级）
+  const { instances, errors: errs } = validateImportRows(
+    parsed.value.rows,
+    parsed.value.headers,
+    knownModelUids.value.size > 0 ? knownModelUids.value : null,
+  )
   errors.value = errs
-  return out
+  return instances
 })
 
 const validCount = computed(() => parsedInstances.value.length)
