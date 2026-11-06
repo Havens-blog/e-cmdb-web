@@ -72,7 +72,11 @@ import { parseTable } from '@/utils/csv'
 import type { UploadFile } from 'element-plus'
 import type { UpsertInstanceReq } from '@/api/types/cmdb.generated'
 
-defineProps<{ visible: boolean }>()
+const props = defineProps<{
+  visible: boolean
+  /** 已加载的模型列表（用于预校验 model_uid 存在性，堵住「静默孤儿」缺口） */
+  models: Array<{ uid: string; name?: string }>
+}>()
 const emit = defineEmits<{ (e: 'update:visible', v: boolean): void; (e: 'imported'): void }>()
 
 const fileList = ref<UploadFile[]>([])
@@ -83,6 +87,8 @@ const importing = ref(false)
 // 固定列 → 顶层字段，其余列 → attributes
 const FIXED_COLS = ['model_uid', 'asset_id', 'asset_name', 'account_id', 'source', 'owner']
 
+const knownModelUids = computed(() => new Set(props.models.map(m => m.uid)))
+
 const parsedInstances = computed<UpsertInstanceReq[]>(() => {
   if (!parsed.value) return []
   const out: UpsertInstanceReq[] = []
@@ -92,6 +98,12 @@ const parsedInstances = computed<UpsertInstanceReq[]>(() => {
     const assetId = (row.asset_id || '').trim()
     if (!modelUid || !assetId) {
       errs.push(`第 ${i + 2} 行：缺少 model_uid 或 asset_id`)
+      continue
+    }
+    // 模型存在性预校验：upsert-batch 对不存在的模型会静默创建孤儿实例
+    // （实测 2026-11-06：code=0、无同步问题记录），必须在导入前拦下
+    if (!knownModelUids.value.has(modelUid)) {
+      errs.push(`第 ${i + 2} 行：模型「${modelUid}」不存在（请先在资源模型中创建）`)
       continue
     }
     const attrs: Record<string, any> = {}

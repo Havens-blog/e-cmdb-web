@@ -306,6 +306,7 @@
     <!-- 导入对话框 -->
     <ImportInstancesDialog
       v-model:visible="importDialogVisible"
+      :models="modelOptions"
       @imported="handleImported"
     />
 
