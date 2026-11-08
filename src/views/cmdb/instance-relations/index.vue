@@ -87,7 +87,8 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
+import { useLatestRequest } from '@/composables/useLatestRequest'
 import { Refresh, WarningFilled } from '@element-plus/icons-vue'
 import { listInstanceRelationsApi } from '@/api'
 import type { InstanceRelationVO } from '@/api/types/cmdb.generated'
@@ -99,6 +100,9 @@ const loading = ref(false)
 const loadError = ref<string | null>(null)
 const page = ref(1)
 const size = ref(20)
+
+// 列表请求竞态守卫（iter284）：翻页连点时只认最后一次请求的结果
+const latestRequest = useLatestRequest()
 // 关系类型筛选（空 = 全部）
 const relationType = ref('')
 
@@ -119,6 +123,9 @@ const formatTime = (ms: number) => {
 }
 
 const load = async () => {
+  // 竞态守卫（iter284）：翻页连点时，第 2 页的慢响应会晚于第 3 页返回，
+  // 若不判断就会把列表覆盖回第 2 页的数据 —— 表现为「页码是 3、数据是第 2 页」。
+  const seq = latestRequest.begin()
   loading.value = true
   loadError.value = null
   try {
@@ -129,13 +136,16 @@ const load = async () => {
     if (relationType.value) params.relation_type_uid = relationType.value
     const res = await listInstanceRelationsApi(params)
     const data = res.data?.data || res.data
+    // 已有更新的请求发出：本次结果作废，不写任何状态（含 loading，交给最新那次收尾）
+    if (!latestRequest.isCurrent(seq)) return
     rows.value = data?.relations || []
     total.value = data?.total || 0
   } catch (error) {
+    if (!latestRequest.isCurrent(seq)) return
     console.error('加载实例关系失败:', error)
     loadError.value = '实例关系加载失败'
   } finally {
-    loading.value = false
+    if (latestRequest.isCurrent(seq)) loading.value = false
   }
 }
 
@@ -152,6 +162,9 @@ const onFilterChange = () => {
 onMounted(() => {
   load()
 })
+// 卸载时作废在途请求，避免组件已销毁还写状态
+onUnmounted(() => latestRequest.reset())
+
 </script>
 
 <style scoped>
