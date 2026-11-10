@@ -205,7 +205,7 @@
               <div class="panel-title">{{ selectedNode.name }}</div>
               <div class="panel-subtitle">{{ selectedNode.subTitle }}</div>
             </div>
-            <el-button text circle size="small" @click="selectedNode = null">
+            <el-button text circle size="small" aria-label="关闭节点详情" @click="selectedNode = null">
               <el-icon><Close /></el-icon>
             </el-button>
           </div>
