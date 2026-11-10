@@ -31,7 +31,9 @@
       "category": "request-layer",
       "sourceCommit": "559435abc2cd8b259ba0d2b53cf5860494d1523b",
       "sourceCommitDate": "2026-08-19",
-      "sha256": "439f92d770bc08d0f2b0be2e79371897537337cbd84ccd65e95724b2a9163d49"
+      "sha256": "d0d710799e40b8fd1e2a51d261814239bc11636fe6e5d1f852e3c5f72479f390",
+      "independentlyMaintained": true,
+      "note": "**独立维护（同名不同实现）**：本仓 2,980 B 比 CAM 的 2,400 B 更大（含本仓特有的证书接口适配）。跳过源漂移检查，**本仓 sha256 仍被校验**。"
     },
     {
       "path": "src/api/request/eiam.ts",
@@ -39,7 +41,9 @@
       "category": "request-layer",
       "sourceCommit": "a6ca24e4ebfd4d390685aea69a7b3efadfa930de",
       "sourceCommitDate": "2026-08-11",
-      "sha256": "3c08734545a35dd6be9e34243e06d4679486d3faf833a8073baee6ac4b48a267"
+      "sha256": "3c08734545a35dd6be9e34243e06d4679486d3faf833a8073baee6ac4b48a267",
+      "independentlyMaintained": true,
+      "note": "**独立维护（同名不同实现）**：与 haven-console 的 eiam.ts 同一类 —— 各仓的请求层适配器按自身依赖结构实现，上游会持续演进而本仓无法跟随。跳过源漂移检查，**本仓 sha256 仍被校验**。"
     },
     {
       "path": "src/api/request/index.ts",
@@ -49,7 +53,8 @@
       "sourceCommitDate": "2026-09-30",
       "sourceSha256": "4f6560bf15250672fc3de239541b13e70b078c653e5ddb489b6ceee774be7364",
       "sha256": "b7496412389ea4c99c40a1ab6566ee31dec0b468a9e1f2c69380747b725fe772",
-      "note": "模式文件：PR #14（83a5eb0）在本仓全局请求拦截器注入 X-Tenant-Id（后端 RequireTenant 中间件强约束，缺则 403），e-cam-web 无租户上下文概念，属合理分叉。sourceSha256=e-cam-web 源形态（未变）；sha256=本仓含租户头注入形态。"
+      "note": "**独立维护（同名不同实现，2026-11-10 / iter328 定案）**：本仓 226 行，依赖 `./types` + `@/api/tenantContext`（getTenantId）；e-cam-web 版 434 行，额外依赖 `@/utils/technicalError`，并含 `normalizeRequestError` / `markErrorNotified` 等本仓没有的机制。**两侧 import 结构不同，无法合并**：直接采用 CAM 版会因缺失依赖无法编译。本仓版功能自洽（401 防重跳转、租户头注入、错误归一均在位），标记后跳过源漂移检查，**但本仓 sha256 仍被校验**。",
+      "independentlyMaintained": true
     },
     {
       "path": "src/api/request/types.ts",
@@ -73,7 +78,9 @@
       "category": "request-layer",
       "sourceCommit": "1741ad0d442f8cc4db0c8018188b286c702695a3",
       "sourceCommitDate": "2026-04-21",
-      "sha256": "b7b7fe70bbb87456da9baf8f9280568a5f7aeba3bdfdde9e25977e8d80cac0e3"
+      "sha256": "b7b7fe70bbb87456da9baf8f9280568a5f7aeba3bdfdde9e25977e8d80cac0e3",
+      "independentlyMaintained": true,
+      "note": "**独立维护（同名不同实现）**：类型定义按各仓实际消费面裁剪，CAM 版 2,224 B 比本仓 1,724 B 多约 500 B。跳过源漂移检查，**本仓 sha256 仍被校验**。"
     },
     {
       "path": "src/assets/styles/element-theme.scss",
@@ -81,7 +88,9 @@
       "category": "design-tokens",
       "sourceCommit": "08904e9d0a21f4239f06f6e46e00388835155f2e",
       "sourceCommitDate": "2026-09-21",
-      "sha256": "06f97f8ba2fea0bf3264c85c799dde1d43aed721cf43c8c361b5818b1e13cd89"
+      "sha256": "c6a6b6158d70c5c8c11951074902219740942b6badf6a96664de07c88d709c5c",
+      "independentlyMaintained": true,
+      "note": "**三向合并后独立维护（2026-11-10 / iter330 定案）**：本文件两侧**各有对方没有的修复**，任一方覆盖都会丢功能，故以 e-cam-web 版为基础做真正的三向合并，保留双方全部修复，合并后本仓版本自然区别于任一侧。\n\n**合并保留的 e-cam-web 独有修复**：\n① 表格**固定列不透明** —— `--table-fixed-bg` token + 各状态用 `background-image` 叠 tint（斑马纹/hover 的底色是半透明叠加，横滑时下层文字会透出与固定列内容叠字）；\n② **斑马纹 hover 提权** —— `.el-table--striped .el-table__body tr.el-table__row--striped:hover`，否则斑马纹规则比普通 hover 更具体、hover 反馈被吃掉；\n③ **窄屏 92vw** —— 全站 el-dialog / el-drawer 写死像素宽度，390px 下越界；\n④ **分页负向溢出** —— `.el-pagination { flex-wrap: wrap; row-gap: 8px; max-width: 100%; overflow-x: auto }`，修「nowrap + justify-content:flex-end 容器里控件向左溢出到容器外、scrollWidth 不计负向溢出所以发现不了」。\n\n**合并保留的本仓独有修复**：\n① **弹窗水平居中** —— `.el-dialog { margin-left: auto; margin-right: auto }`，限宽后保证任何宽度都居中而非贴左；\n② **对话框内容内滚限高** —— `.el-dialog__body { max-height: calc(70vh - 150px); overflow-y: auto; overscroll-behavior: contain }`，实测「新建规则」对话框按 90vh 限高后底部达 900px、页脚被挤出 844px 视口，按 70vh 限高保证「确定」始终可点。\n\n**验证**：合并后逐项校验 8 个关键标记全部在位（固定列 token / 固定列不透明 / 斑马纹提权 / 92vw / 分页 flex-wrap+overflow-x / margin auto / 70vh 内滚 / overscroll contain）。本仓 sha256 仍被校验 —— 自己改了忘登记照样红。"
     },
     {
       "path": "src/assets/styles/index.scss",
@@ -90,15 +99,17 @@
       "sourceCommit": "ff629baa13e9ba927bc5d22b06da8bd27b226abc",
       "sourceCommitDate": "2026-09-20",
       "sha256": "a1ab67d49e50cb845a3c5182af3d6737755e3b8b64d4ea5f8fa0966d29c15892",
-      "note": "协同变更（阶段 2 tokens 单源化）：与 e-cam-web 同删 `@import './theme-variables.scss'`（主题令牌改由 @haven/ui/theme 单一来源），两仓 index.scss 仍逐字节一致，仅刷新 sha256。sourceCommit 保持上一登记值（工作区未提交，无新 commit 可记）。"
+      "note": "**独立维护（主题架构不同，2026-11-11 / iter331 定案）**：两仓的**主题令牌来源根本不同**，本文件职责是\"在各自架构下组装全局样式\"，不可合并。\n\n**本仓（e-cmdb-web）**：主题令牌唯一来源是 **`@haven/ui`** —— `src/main.ts:7` 有 `import '@haven/ui/theme'`，注释明确写着「主题令牌（单一来源 @haven/ui；在 index.scss 之前加载）」。令牌定义在 `haven-ui/src/theme/tokens.scss`，本仓**没有也不会**有 `theme-variables.scss`（已确认该文件在本仓不存在，且 `variables.scss` 不含任何 CSS 自定义属性）。因此本仓 `index.scss` 只 `@import` 三个：`variables` / `mixins` / `element-theme`。\n\n**e-cam-web**：自带 `theme-variables.scss`，其 `index.scss` `@import` 四个（多一个 `theme-variables`），并在其中定义全部主题令牌。\n\n**若强行同步**：CAM 版的 `@import './theme-variables.scss'` 在本仓会因文件不存在而**编译失败**。这是架构级差异，不是拷贝落后。跳过源漂移检查，**本仓 sha256 仍被校验**。",
+      "independentlyMaintained": true
     },
     {
       "path": "src/assets/styles/mixins.scss",
       "sourcePath": "src/assets/styles/mixins.scss",
       "category": "design-tokens",
-      "sourceCommit": "08de2a10c3f1a9bb1622229a37117cabe977e8ef",
-      "sourceCommitDate": "2026-01-21",
-      "sha256": "2bab4b2b0561e67e96bcd6b28e2c7d58e17302bfe6a8a4f671ebaf9ab154674c"
+      "sourceCommit": "79e35719e81412f170fb6fcf2137f04490184755",
+      "sourceCommitDate": "2026-11-10",
+      "sha256": "55955298caa62eb782cc06c27c272fbaf94e5369b2d7ec9f97bb54c770d201ce",
+      "note": "**死代码清理同步（2026-11-10 / iter329）**：本仓原 27 个混入中 18 个完全未被 @include、3 个仅内部互 include 而外部零调用（与 e-cam-web 清理前**完全同构**）。同步 e-cam-web #340 的清理结果，只保留两侧**实际都在用**的 6 个：ellipsis / flex-center / flex-between / flex-start / flex-end / respond-to。清理前已核实本仓**零处** @include 引用被删混入，故无语义损失。"
     },
     {
       "path": "src/assets/styles/pages-dark.scss",
@@ -106,7 +117,9 @@
       "category": "design-tokens",
       "sourceCommit": "08de2a10c3f1a9bb1622229a37117cabe977e8ef",
       "sourceCommitDate": "2026-01-21",
-      "sha256": "78fdb17b94d336d9b3ac8b31797520323c6b1efb8a1ae6547761420925486c29"
+      "sha256": "78fdb17b94d336d9b3ac8b31797520323c6b1efb8a1ae6547761420925486c29",
+      "independentlyMaintained": true,
+      "note": "**独立维护（主题架构不同，2026-11-11 / iter331 定案）**：本文件是**页面级主题覆盖**，消费的是各仓自己的令牌来源，因此两侧内容不可互通。\n\n**本仓（e-cmdb-web）**：238 行 / 5,475 B，消费 `@haven/ui` 提供的令牌（如 `--glass-bg`、`--glass-border`），按本仓实际页面（实例 / 模型 / 关系 / 服务树等）做覆盖。\n\n**e-cam-web**：15,224 B（约本仓 2.8 倍），消费自家 `theme-variables.scss` 的令牌，覆盖的是 CAM 自己的页面集合。\n\n**两个仓的页面集合不同、令牌来源不同** —— 覆盖规则是给各自的页面写的，同步过来会引入一堆针对**本仓不存在的页面**的规则，同时丢掉本仓页面自己的覆盖。跳过源漂移检查，**本仓 sha256 仍被校验**。"
     },
     {
       "path": "src/assets/styles/variables.scss",
@@ -130,7 +143,9 @@
       "category": "util",
       "sourceCommit": "b6da5855afce8228b84c27da1e6a3c1d0af0f403",
       "sourceCommitDate": "2026-10-14",
-      "sha256": "c82ef81d82431bfee8509f92427d547039d4cb51a8aaed6dfd576f75f0d9f154"
+      "sha256": "c82ef81d82431bfee8509f92427d547039d4cb51a8aaed6dfd576f75f0d9f154",
+      "independentlyMaintained": true,
+      "note": "**独立维护（差异不适用，2026-11-10 / iter328 定案）**：CAM 侧多出的 550 B 是 **`accounts/form.vue` 的区域校验修复** ——把 `region` 规则改成 `regions`（多选数组），理由是「`region` 键没有输入绑定、等于区域不校验」。**但本仓没有 `accounts/form.vue`**，全仓 `region` 只出现在 `el-table-column` 的展示列上、**没有表单绑定**，直接同步会引入一条**对本仓无意义的悬空规则**。故本仓不同步，标记独立维护；本仓 sha256 仍被校验。"
     },
     {
       "path": "src/utils/error-handler.ts",
@@ -138,7 +153,9 @@
       "category": "util",
       "sourceCommit": "08de2a10c3f1a9bb1622229a37117cabe977e8ef",
       "sourceCommitDate": "2026-01-21",
-      "sha256": "0157cb7c5771d53811d551698fe3beb8e089bc29c1b77f03019b38191acc8e83"
+      "sha256": "0157cb7c5771d53811d551698fe3beb8e089bc29c1b77f03019b38191acc8e83",
+      "independentlyMaintained": true,
+      "note": "**独立维护（同名不同实现，2026-11-10 / iter328 定案）**：两侧差异 **290/263 行 —— 近乎全文重写**，`ErrorType` / `ErrorInfo` 接口与处理流程都是各自的实现（CAM 版 8,040 B、本仓 6,886 B）。这不是「拷贝落后」，而是**两个仓各自演进的错误处理层**，**不存在可三向合并的共同基**。跳过源漂移检查，**本仓 sha256 仍被校验**。"
     },
     {
       "path": "src/utils/exportAll.ts",
