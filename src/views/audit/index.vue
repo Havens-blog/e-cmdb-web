@@ -34,7 +34,7 @@ const auditLogsLoading = ref(false)
 const auditLogsError = ref<string | null>(null)
 const auditLogsPage = ref({ offset: 0, limit: 20 })
 /** 操作审计筛选：接口路径前缀 + 操作类型 + 时间范围（均为后端 AuditLogFilter 支持的参数） */
-const opQuery = ref({ api_path: '', operation_type: '', timeRange: null as [Date, Date] | null })
+const opQuery = ref({ api_path: '', operation_type: '', operator_id: '', timeRange: null as [Date, Date] | null })
 
 async function loadAuditLogs() {
     auditLogsLoading.value = true
@@ -42,7 +42,12 @@ async function loadAuditLogs() {
     try {
         // 参数构造抽成纯函数（utils/auditLogParams），接线由单测锁定
         const params = buildAuditLogParams(
-            { api_path: opQuery.value.api_path, operation_type: opQuery.value.operation_type, timeRange: opQuery.value.timeRange },
+            {
+                api_path: opQuery.value.api_path,
+                operation_type: opQuery.value.operation_type,
+                operator_id: opQuery.value.operator_id,
+                timeRange: opQuery.value.timeRange,
+            },
             auditLogsPage.value.offset,
             auditLogsPage.value.limit,
         )
@@ -298,6 +303,13 @@ onMounted(load)
             clearable
             @keyup.enter="searchAuditLogs"
           />
+          <el-input
+            v-model="opQuery.operator_id"
+            placeholder="操作者ID（0=系统/S2S）"
+            class="q-input q-op"
+            clearable
+            @keyup.enter="searchAuditLogs"
+          />
           <el-date-picker
             v-model="opQuery.timeRange"
             type="datetimerange"
@@ -314,7 +326,7 @@ onMounted(load)
             <template #default="{ row }">{{ fmtTime(row.ctime) }}</template>
           </el-table-column>
           <el-table-column label="操作者" width="130">
-            <template #default="{ row }">{{ row.operator_name || row.operator_id || '—' }}</template>
+            <template #default="{ row }">{{ row.operator_name || (row.operator_id === '0' ? '系统/S2S' : (row.operator_id || '—')) }}</template>
           </el-table-column>
           <el-table-column label="操作" width="160" show-overflow-tooltip>
             <template #default="{ row }">{{ row.operation_type }}</template>
@@ -389,6 +401,7 @@ onMounted(load)
 .q-input { width: 220px; }
 .q-path { width: 300px; }
 .q-type { width: 170px; }
+.q-op { width: 150px; }
 .q-range { width: 340px; }
 .q-range { max-width: 380px; }
 
