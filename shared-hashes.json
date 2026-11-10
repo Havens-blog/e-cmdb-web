@@ -88,7 +88,9 @@
       "category": "design-tokens",
       "sourceCommit": "08904e9d0a21f4239f06f6e46e00388835155f2e",
       "sourceCommitDate": "2026-09-21",
-      "sha256": "06f97f8ba2fea0bf3264c85c799dde1d43aed721cf43c8c361b5818b1e13cd89"
+      "sha256": "c6a6b6158d70c5c8c11951074902219740942b6badf6a96664de07c88d709c5c",
+      "independentlyMaintained": true,
+      "note": "**三向合并后独立维护（2026-11-10 / iter330 定案）**：本文件两侧**各有对方没有的修复**，任一方覆盖都会丢功能，故以 e-cam-web 版为基础做真正的三向合并，保留双方全部修复，合并后本仓版本自然区别于任一侧。\n\n**合并保留的 e-cam-web 独有修复**：\n① 表格**固定列不透明** —— `--table-fixed-bg` token + 各状态用 `background-image` 叠 tint（斑马纹/hover 的底色是半透明叠加，横滑时下层文字会透出与固定列内容叠字）；\n② **斑马纹 hover 提权** —— `.el-table--striped .el-table__body tr.el-table__row--striped:hover`，否则斑马纹规则比普通 hover 更具体、hover 反馈被吃掉；\n③ **窄屏 92vw** —— 全站 el-dialog / el-drawer 写死像素宽度，390px 下越界；\n④ **分页负向溢出** —— `.el-pagination { flex-wrap: wrap; row-gap: 8px; max-width: 100%; overflow-x: auto }`，修「nowrap + justify-content:flex-end 容器里控件向左溢出到容器外、scrollWidth 不计负向溢出所以发现不了」。\n\n**合并保留的本仓独有修复**：\n① **弹窗水平居中** —— `.el-dialog { margin-left: auto; margin-right: auto }`，限宽后保证任何宽度都居中而非贴左；\n② **对话框内容内滚限高** —— `.el-dialog__body { max-height: calc(70vh - 150px); overflow-y: auto; overscroll-behavior: contain }`，实测「新建规则」对话框按 90vh 限高后底部达 900px、页脚被挤出 844px 视口，按 70vh 限高保证「确定」始终可点。\n\n**验证**：合并后逐项校验 8 个关键标记全部在位（固定列 token / 固定列不透明 / 斑马纹提权 / 92vw / 分页 flex-wrap+overflow-x / margin auto / 70vh 内滚 / overscroll contain）。本仓 sha256 仍被校验 —— 自己改了忘登记照样红。"
     },
     {
       "path": "src/assets/styles/index.scss",
