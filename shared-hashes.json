@@ -31,7 +31,9 @@
       "category": "request-layer",
       "sourceCommit": "559435abc2cd8b259ba0d2b53cf5860494d1523b",
       "sourceCommitDate": "2026-08-19",
-      "sha256": "439f92d770bc08d0f2b0be2e79371897537337cbd84ccd65e95724b2a9163d49"
+      "sha256": "d0d710799e40b8fd1e2a51d261814239bc11636fe6e5d1f852e3c5f72479f390",
+      "independentlyMaintained": true,
+      "note": "**独立维护（同名不同实现）**：本仓 2,980 B 比 CAM 的 2,400 B 更大（含本仓特有的证书接口适配）。跳过源漂移检查，**本仓 sha256 仍被校验**。"
     },
     {
       "path": "src/api/request/eiam.ts",
@@ -39,7 +41,9 @@
       "category": "request-layer",
       "sourceCommit": "a6ca24e4ebfd4d390685aea69a7b3efadfa930de",
       "sourceCommitDate": "2026-08-11",
-      "sha256": "3c08734545a35dd6be9e34243e06d4679486d3faf833a8073baee6ac4b48a267"
+      "sha256": "3c08734545a35dd6be9e34243e06d4679486d3faf833a8073baee6ac4b48a267",
+      "independentlyMaintained": true,
+      "note": "**独立维护（同名不同实现）**：与 haven-console 的 eiam.ts 同一类 —— 各仓的请求层适配器按自身依赖结构实现，上游会持续演进而本仓无法跟随。跳过源漂移检查，**本仓 sha256 仍被校验**。"
     },
     {
       "path": "src/api/request/index.ts",
@@ -49,7 +53,8 @@
       "sourceCommitDate": "2026-09-30",
       "sourceSha256": "4f6560bf15250672fc3de239541b13e70b078c653e5ddb489b6ceee774be7364",
       "sha256": "b7496412389ea4c99c40a1ab6566ee31dec0b468a9e1f2c69380747b725fe772",
-      "note": "模式文件：PR #14（83a5eb0）在本仓全局请求拦截器注入 X-Tenant-Id（后端 RequireTenant 中间件强约束，缺则 403），e-cam-web 无租户上下文概念，属合理分叉。sourceSha256=e-cam-web 源形态（未变）；sha256=本仓含租户头注入形态。"
+      "note": "**独立维护（同名不同实现，2026-11-10 / iter328 定案）**：本仓 226 行，依赖 `./types` + `@/api/tenantContext`（getTenantId）；e-cam-web 版 434 行，额外依赖 `@/utils/technicalError`，并含 `normalizeRequestError` / `markErrorNotified` 等本仓没有的机制。**两侧 import 结构不同，无法合并**：直接采用 CAM 版会因缺失依赖无法编译。本仓版功能自洽（401 防重跳转、租户头注入、错误归一均在位），标记后跳过源漂移检查，**但本仓 sha256 仍被校验**。",
+      "independentlyMaintained": true
     },
     {
       "path": "src/api/request/types.ts",
@@ -73,7 +78,9 @@
       "category": "request-layer",
       "sourceCommit": "1741ad0d442f8cc4db0c8018188b286c702695a3",
       "sourceCommitDate": "2026-04-21",
-      "sha256": "b7b7fe70bbb87456da9baf8f9280568a5f7aeba3bdfdde9e25977e8d80cac0e3"
+      "sha256": "b7b7fe70bbb87456da9baf8f9280568a5f7aeba3bdfdde9e25977e8d80cac0e3",
+      "independentlyMaintained": true,
+      "note": "**独立维护（同名不同实现）**：类型定义按各仓实际消费面裁剪，CAM 版 2,224 B 比本仓 1,724 B 多约 500 B。跳过源漂移检查，**本仓 sha256 仍被校验**。"
     },
     {
       "path": "src/assets/styles/element-theme.scss",
@@ -130,7 +137,9 @@
       "category": "util",
       "sourceCommit": "b6da5855afce8228b84c27da1e6a3c1d0af0f403",
       "sourceCommitDate": "2026-10-14",
-      "sha256": "c82ef81d82431bfee8509f92427d547039d4cb51a8aaed6dfd576f75f0d9f154"
+      "sha256": "c82ef81d82431bfee8509f92427d547039d4cb51a8aaed6dfd576f75f0d9f154",
+      "independentlyMaintained": true,
+      "note": "**独立维护（差异不适用，2026-11-10 / iter328 定案）**：CAM 侧多出的 550 B 是 **`accounts/form.vue` 的区域校验修复** ——把 `region` 规则改成 `regions`（多选数组），理由是「`region` 键没有输入绑定、等于区域不校验」。**但本仓没有 `accounts/form.vue`**，全仓 `region` 只出现在 `el-table-column` 的展示列上、**没有表单绑定**，直接同步会引入一条**对本仓无意义的悬空规则**。故本仓不同步，标记独立维护；本仓 sha256 仍被校验。"
     },
     {
       "path": "src/utils/error-handler.ts",
@@ -138,7 +147,9 @@
       "category": "util",
       "sourceCommit": "08de2a10c3f1a9bb1622229a37117cabe977e8ef",
       "sourceCommitDate": "2026-01-21",
-      "sha256": "0157cb7c5771d53811d551698fe3beb8e089bc29c1b77f03019b38191acc8e83"
+      "sha256": "0157cb7c5771d53811d551698fe3beb8e089bc29c1b77f03019b38191acc8e83",
+      "independentlyMaintained": true,
+      "note": "**独立维护（同名不同实现，2026-11-10 / iter328 定案）**：两侧差异 **290/263 行 —— 近乎全文重写**，`ErrorType` / `ErrorInfo` 接口与处理流程都是各自的实现（CAM 版 8,040 B、本仓 6,886 B）。这不是「拷贝落后」，而是**两个仓各自演进的错误处理层**，**不存在可三向合并的共同基**。跳过源漂移检查，**本仓 sha256 仍被校验**。"
     },
     {
       "path": "src/utils/exportAll.ts",
