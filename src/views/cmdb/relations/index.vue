@@ -168,7 +168,7 @@
           </div>
           <div class="col-actions" @click.stop>
             <el-dropdown trigger="click" @command="(cmd: string) => handleAction(cmd, relation)">
-              <button class="action-trigger">
+              <button class="action-trigger" :aria-label="`${relation.name} 的更多操作`">
                 <el-icon><MoreFilled /></el-icon>
               </button>
               <template #dropdown>
@@ -223,7 +223,12 @@
         共 <strong>{{ pagination.total }}</strong> 条记录
       </div>
       <div class="pagination-controls">
-        <button class="page-btn" :disabled="pagination.page === 1" @click="handleCurrentChange(pagination.page - 1)">
+        <button
+          class="page-btn"
+          aria-label="上一页"
+          :disabled="pagination.page === 1"
+          @click="handleCurrentChange(pagination.page - 1)"
+        >
           <el-icon><ArrowLeft /></el-icon>
         </button>
         <div class="page-numbers">
@@ -238,7 +243,12 @@
             {{ page }}
           </button>
         </div>
-        <button class="page-btn" :disabled="pagination.page === totalPages" @click="handleCurrentChange(pagination.page + 1)">
+        <button
+          class="page-btn"
+          aria-label="下一页"
+          :disabled="pagination.page === totalPages"
+          @click="handleCurrentChange(pagination.page + 1)"
+        >
           <el-icon><ArrowRight /></el-icon>
         </button>
         <el-select v-model="pagination.size" class="size-select" @change="handleSizeChange">

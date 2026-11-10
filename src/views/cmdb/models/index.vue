@@ -65,7 +65,7 @@
             <span class="group-name">{{ group.name }}</span>
             <span class="group-count">{{ group.models?.length || 0 }}</span>
             <el-dropdown v-if="!group.is_builtin" trigger="click" @command="(cmd: string) => handleGroupAction(cmd, group)">
-              <button class="group-more" @click.stop>
+              <button class="group-more" :aria-label="`${group.name} 分组的更多操作`" @click.stop>
                 <el-icon :size="12"><MoreFilled /></el-icon>
               </button>
               <template #dropdown>
@@ -117,7 +117,7 @@
                 <el-icon v-else :size="20"><component :is="getCategoryIcon(model.category)" /></el-icon>
               </div>
               <el-dropdown trigger="click" @command="(cmd: string) => handleModelAction(cmd, model)" @click.stop>
-                <button class="more-btn" @click.stop>
+                <button class="more-btn" :aria-label="`${model.name} 的更多操作`" @click.stop>
                   <el-icon><MoreFilled /></el-icon>
                 </button>
                 <template #dropdown>
