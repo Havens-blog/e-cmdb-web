@@ -32,7 +32,7 @@
       <div class="group-panel">
         <div class="panel-header">
           <span class="panel-title">模型分组</span>
-          <el-button text size="small" @click="handleAddGroup">
+          <el-button text size="small" aria-label="新建分组" @click="handleAddGroup">
             <el-icon><Plus /></el-icon>
           </el-button>
         </div>

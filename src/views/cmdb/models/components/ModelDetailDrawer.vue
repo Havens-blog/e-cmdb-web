@@ -53,10 +53,20 @@
                     <span class="attr-count">{{ group.attributes?.length || 0 }}</span>
                   </div>
                   <div class="group-actions" v-if="!group.is_builtin">
-                    <el-button text size="small" @click="handleEditAttrGroup(group)">
+                    <el-button
+                      text
+                      size="small"
+                      :aria-label="`编辑属性组 ${group.name}`"
+                      @click="handleEditAttrGroup(group)"
+                    >
                       <el-icon><Edit /></el-icon>
                     </el-button>
-                    <el-button text size="small" @click="handleDeleteAttrGroup(group)">
+                    <el-button
+                      text
+                      size="small"
+                      :aria-label="`删除属性组 ${group.name}`"
+                      @click="handleDeleteAttrGroup(group)"
+                    >
                       <el-icon><Delete /></el-icon>
                     </el-button>
                   </div>
@@ -73,10 +83,20 @@
                       <span v-if="attr.unique" class="tag unique">唯一</span>
                     </div>
                     <div class="attr-actions">
-                      <el-button text size="small" @click="handleEditAttribute(attr)">
+                      <el-button
+                        text
+                        size="small"
+                        :aria-label="`编辑属性 ${attr.field_name}`"
+                        @click="handleEditAttribute(attr)"
+                      >
                         <el-icon><Edit /></el-icon>
                       </el-button>
-                      <el-button text size="small" @click="handleDeleteAttribute(attr)">
+                      <el-button
+                        text
+                        size="small"
+                        :aria-label="`删除属性 ${attr.field_name}`"
+                        @click="handleDeleteAttribute(attr)"
+                      >
                         <el-icon><Delete /></el-icon>
                       </el-button>
                     </div>

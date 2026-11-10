@@ -14,7 +14,7 @@
           <div class="dp-subtitle">{{ displayType }}</div>
         </div>
       </div>
-      <el-button link @click="emit('close')"><el-icon :size="18"><Close /></el-icon></el-button>
+      <el-button link aria-label="关闭详情面板" @click="emit('close')"><el-icon :size="18"><Close /></el-icon></el-button>
     </div>
 
     <div v-if="loading" v-loading="true" class="dp-loading"></div>
