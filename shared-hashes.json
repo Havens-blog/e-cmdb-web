@@ -103,9 +103,10 @@
       "path": "src/assets/styles/mixins.scss",
       "sourcePath": "src/assets/styles/mixins.scss",
       "category": "design-tokens",
-      "sourceCommit": "08de2a10c3f1a9bb1622229a37117cabe977e8ef",
-      "sourceCommitDate": "2026-01-21",
-      "sha256": "2bab4b2b0561e67e96bcd6b28e2c7d58e17302bfe6a8a4f671ebaf9ab154674c"
+      "sourceCommit": "79e35719e81412f170fb6fcf2137f04490184755",
+      "sourceCommitDate": "2026-11-10",
+      "sha256": "55955298caa62eb782cc06c27c272fbaf94e5369b2d7ec9f97bb54c770d201ce",
+      "note": "**死代码清理同步（2026-11-10 / iter329）**：本仓原 27 个混入中 18 个完全未被 @include、3 个仅内部互 include 而外部零调用（与 e-cam-web 清理前**完全同构**）。同步 e-cam-web #340 的清理结果，只保留两侧**实际都在用**的 6 个：ellipsis / flex-center / flex-between / flex-start / flex-end / respond-to。清理前已核实本仓**零处** @include 引用被删混入，故无语义损失。"
     },
     {
       "path": "src/assets/styles/pages-dark.scss",
