@@ -233,6 +233,12 @@
 }
 
 // 表格
+:root {
+  // 固定列底色默认值；容器（如 .cert-table-card）可覆盖并靠继承生效。
+  // 注意不能声明在 .el-table 上，否则会覆盖祖先的覆盖值。
+  --table-fixed-bg: var(--bg-elevated);
+}
+
 .el-table {
   --el-table-bg-color: transparent;
   --el-table-tr-bg-color: transparent;
@@ -257,6 +263,34 @@
   .el-table__row:hover > td.el-table__cell {
     background-color: var(--table-row-hover);
   }
+
+  // 斑马纹行的底色规则比普通 hover 更具体，hover 会被吃掉；这里显式提权补回反馈
+  &.el-table--striped .el-table__body tr.el-table__row--striped:hover > td.el-table__cell {
+    background-color: var(--table-row-hover);
+  }
+
+  // 固定列必须不透明：斑马纹/hover 行的底色是半透明叠加，横滑时下层文字会透出与固定列内容叠字。
+  // 做法：cell 给实色底（token 可覆盖），各状态用 background-image 叠 tint（image 在 color 之上，
+  // 合成后仍不透明），这样不必手算合成色，暗色/浅色主题都成立。
+  .el-table__cell.el-table-fixed-column--left,
+  .el-table__cell.el-table-fixed-column--right {
+    background-color: var(--table-fixed-bg) !important;
+  }
+
+  th.el-table-fixed-column--left,
+  th.el-table-fixed-column--right {
+    background-image: linear-gradient(var(--el-table-header-bg-color), var(--el-table-header-bg-color)) !important;
+  }
+
+  .el-table__body tr.el-table__row--striped > td.el-table-fixed-column--left,
+  .el-table__body tr.el-table__row--striped > td.el-table-fixed-column--right {
+    background-image: linear-gradient(var(--el-fill-color-lighter), var(--el-fill-color-lighter)) !important;
+  }
+
+  .el-table__body tr:hover > td.el-table-fixed-column--left,
+  .el-table__body tr:hover > td.el-table-fixed-column--right {
+    background-image: linear-gradient(var(--table-row-hover), var(--table-row-hover)) !important;
+  }
 }
 
 // 对话框
@@ -264,14 +298,19 @@
   --el-dialog-bg-color: var(--dialog-bg);
   --el-dialog-border-radius: 12px;
   
+  // 窄屏兜底（iter292）：全站 87 处 el-dialog 都写死像素宽度（440~760px），
+  // 390px 手机视口下会左右越界。实测「新建渠道」弹窗（width=560）在 390px 下
+  // right=560、越界 170px。这里统一限宽，不改各页面的 width 声明
+  // （它们在大屏上仍按各自像素值显示，92vw 只在窄屏生效）。
+  max-width: 92vw;
+  // 水平居中（本仓保留，e-cam-web 无此项）：窄屏下 Element Plus 默认按 width 定位，
+  // 限宽后可能贴左；auto 边距保证任何宽度都居中。
+  margin-left: auto;
+  margin-right: auto;
+  
   background-color: var(--dialog-bg);
   border: 1px solid var(--dialog-border);
   box-shadow: var(--shadow-lg);
-  // 窄屏兜底：全站 16 处 el-dialog 均写死像素宽度（420~760px），
-  // 390px 手机视口下会左右越界。这里统一限制不超过视口宽度。
-  max-width: 92vw;
-  margin-left: auto;
-  margin-right: auto;
   
   .el-dialog__header {
     border-bottom: 1px solid var(--border-subtle);
@@ -286,9 +325,10 @@
   .el-dialog__body {
     padding: 24px;
     color: var(--text-regular);
-    // 内容超高时内部滚动：Element Plus 默认 margin-top 为 15vh，
-    // 实测「新建规则」对话框按 90vh 限高后底部达 900px，页脚被挤出 844px 视口。
-    // 按 70vh 限高，为顶部偏移与标题栏/页脚留出余量，保证「确定」始终可点。
+    // 内容超高时内部滚动（本仓保留，e-cam-web 无此项）：
+    // Element Plus 默认 margin-top 为 15vh；实测「新建规则」对话框按 90vh 限高后
+    // 底部达 900px、页脚被挤出 844px 视口。按 70vh 限高，为顶部偏移与标题栏/页脚留余量，
+    // 保证「确定」按钮始终可点。
     max-height: calc(70vh - 150px);
     overflow-y: auto;
     overscroll-behavior: contain;
@@ -304,11 +344,11 @@
 .el-drawer {
   --el-drawer-bg-color: var(--dialog-bg);
   
-  background-color: var(--dialog-bg);
-  // 窄屏兜底：5 处 el-drawer 中 4 处写死像素宽度（480~860px），
-  // 390px 手机视口下会超出屏幕（最宽的实例详情 860px 超出 470px）。
-  // 限制不超过视口宽度；用百分比的（ResourceDetailDrawer 50%）不受影响。
+  // 窄屏兜底（iter292）：全站 15 处 el-drawer 写死像素宽度（420~720px），
+  // 390px 下同样左右越界；与上面 .el-dialog 同一处理。
   max-width: 92vw;
+  
+  background-color: var(--dialog-bg);
   
   .el-drawer__header {
     border-bottom: 1px solid var(--border-subtle);
@@ -374,6 +414,15 @@
 
 // 分页
 .el-pagination {
+  // 窄屏可用性：默认 nowrap 且挂 justify-content:flex-end 的容器里，整组控件会向左溢出到容器外
+  // （审计日志页 360 下 left=-344，控件不可达），而 scrollWidth 不计负向溢出，靠「页面无横滚」发现不了。
+  flex-wrap: wrap;
+  row-gap: 8px;
+  // 极窄时换行后仍可能超出容器：让控件条自身可横向滚动，保证所有控件可达而不是被裁掉。
+  // 契约：容器内不要再放 teleported:false 的浮层，否则会被这里的 overflow 裁切。
+  max-width: 100%;
+  overflow-x: auto;
+
   --el-pagination-bg-color: transparent;
   --el-pagination-text-color: var(--text-secondary);
   --el-pagination-button-bg-color: var(--bg-surface);
@@ -444,6 +493,13 @@
 
   .el-pagination__total {
     color: var(--text-secondary);
+  }
+}
+
+@media (max-width: 768px) {
+  .el-pagination {
+    // safe center：内容仍溢出时回退到 start，避免左侧控件既不可见也滚不到
+    justify-content: safe center;
   }
 }
 
@@ -804,4 +860,16 @@
 // 浅色主题消息提示
 :root.light .el-message {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+
+// 以下表格容器底色是 --bg-surface（比玻璃卡更亮），固定列若沿用默认 --bg-elevated 会出现深色竖带
+.cert-table-card,
+.table-wrapper,
+.budget-table-card,
+.allocation-table-card,
+.anomaly-page,
+.domain-table-wrapper,
+.record-table-wrapper {
+  --table-fixed-bg: var(--bg-surface);
 }
