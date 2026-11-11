@@ -112,11 +112,24 @@ export const useAppStore = defineStore(
         }
 
         /**
-         * 设置页面标题
+         * 设置页面标题。
+         *
+         * iter342：修正两处问题。
+         *
+         * ① **品牌名写错了** —— 原为 `CAM 多云资产管理`，那是从 `e-cam-web` 复制本仓时的遗留。
+         *    本仓是 CMDB（配置管理数据库），标题里出现「CAM」会让用户以为进错了系统。
+         *    现改为与本仓 `index.html` 的 `<title>息壤 · CMDB</title>` 一致。
+         *
+         * ② **它目前没有任何调用点**（全仓仅定义 + 导出）。路由级标题已由
+         *    `router/index.ts` 的 `afterEach` 统一消费 `meta.title` 承担 ——
+         *    那才是正确位置：标题应在**每次导航**更新，而不是等某个页面主动调用。
+         *    保留本函数（有导出、对外有契约），但**页面不必再调它**；
+         *    若将来有页面需要在路由标题之外覆盖（如详情页带对象名），
+         *    调它仍可生效 —— 只是品牌名不能再写错。
          */
         const setPageTitle = (title: string) => {
             pageTitle.value = title
-            document.title = `${title} - CAM 多云资产管理`
+            document.title = `${title} - 息壤 · CMDB`
         }
 
         /**

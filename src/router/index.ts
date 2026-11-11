@@ -65,3 +65,43 @@ export async function tenantGuard(to: RouteLocationNormalized): Promise<true | f
 }
 
 router.beforeEach(tenantGuard)
+
+// ---- route meta 契约 + document.title 消费（iter342）----
+declare module 'vue-router' {
+    interface RouteMeta {
+        /**
+         * 页面标题（仅用于 document.title，非守卫判据）。
+         *
+         * 本仓 `routes.ts` 里**早就有 17 条 `meta.title`**（仪表盘 / 资源模型 / 资源实例 …），
+         * 但此前**没有任何代码消费它** —— 契约与数据都在，消费者缺失。
+         */
+        title?: string
+    }
+}
+
+const SITE_TITLE = '息壤 · CMDB'
+
+/**
+ * 让浏览器标签页显示当前页面名。
+ *
+ * 为什么需要它（iter342 实测）：
+ *   `/cmdb/dashboard`、`/models`、`/instances`、`/audit` 四个不同页面，
+ *   `document.title` **恒为「息壤 · CMDB」**（来自 index.html 的静态 <title>）。
+ *   用户开多个标签全部同名，浏览器标签栏无法区分，只能一个个点开看。
+ *
+ * 为什么之前没生效：`stores/app.ts` 里有个 `setPageTitle()` 会写 `document.title`，
+ * 但它**全仓零调用点**（只有定义 + 导出）。而且它写的品牌名是
+ * **「CAM 多云资产管理」** —— 从 CAM 仓复制过来时的遗留，与本仓品牌不符。
+ * 本文件不依赖那个 store 函数：路由级标题应在**每次导航**都更新，
+ * 而不是等某个页面主动调用。
+ *
+ * 这同时是 WCAG 2.4.2（Page Titled）的要求：页面必须有描述其目的或主题的标题。
+ *
+ * 用 `afterEach` 而非 `beforeEach`：标题应在导航**确认成功后**才改，
+ * 否则被 tenantGuard 重定向打断的导航会留下一闪而过的错误标题。
+ * 缺失 `meta.title` 时回落站点名，避免出现「undefined - 息壤 · CMDB」。
+ */
+router.afterEach((to) => {
+    const pageTitle = typeof to.meta.title === 'string' ? to.meta.title.trim() : ''
+    document.title = pageTitle ? `${pageTitle} - ${SITE_TITLE}` : SITE_TITLE
+})

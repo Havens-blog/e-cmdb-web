@@ -204,6 +204,9 @@ const routes: RouteRecordRaw[] = [
         path: '/:pathMatch(.*)*',
         name: 'not-found',
         component: () => import('@/views/error/NotFound.vue'),
+        // 标签页显示「页面不存在 - 息壤 · CMDB」（iter342）：
+        // 否则 404 的标签看起来和正常页一模一样，用户开多个标签时无法分辨哪个是错的
+        meta: { title: '页面不存在' },
     },
 ]
 
