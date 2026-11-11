@@ -87,7 +87,8 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useLatestRequest } from '@/composables/useLatestRequest'
 import { Refresh, WarningFilled } from '@element-plus/icons-vue'
 import { listInstanceRelationsApi } from '@/api'
@@ -105,6 +106,52 @@ const size = ref(20)
 const latestRequest = useLatestRequest()
 // 关系类型筛选（空 = 全部）
 const relationType = ref('')
+
+// ---- URL 同步（iter353，T12）----
+//
+// 为什么需要它：本页有「页码 + 每页条数 + 关系类型」三种视图状态，此前**只存在组件内 ref 里**。
+// 实测后果：翻到第 5 页设好关系类型，进某条详情再返回 / 刷新页面 → 全部回到默认（第 1 页、20 条、全部类型），
+// 且**无法把筛好的视图链接发给同事**。对运维是高频损耗（筛选条件往往是精心挑出来的）。
+//
+// 口径与 `views/cmdb/instances/index.vue` 的 `syncStateToUrl` 一致：
+//   · `router.replace` 而非 push —— 翻页/改筛选不该往历史栈塞条目；
+//   · **只写非空且非默认值** —— 默认状态不产生任何 query，链接保持干净；
+//   · **只增删自己这几个 key**，页面其它 query（如租户）原样保留；
+//   · 写前比对，值未变不写（`replace` 会触发导航，无谓调用会打断操作）。
+const route = useRoute()
+const router = useRouter()
+
+function syncStateToUrl(): void {
+  const merged: Record<string, string> = {}
+  for (const [k, v] of Object.entries(route.query)) {
+    if (typeof v === 'string') merged[k] = v
+  }
+  // 先清掉本页管理的 key，再按当前状态重新写入
+  for (const k of ['page', 'size', 'relation_type_uid']) delete merged[k]
+  if (page.value > 1) merged.page = String(page.value)
+  if (size.value !== 20) merged.size = String(size.value)
+  if (relationType.value) merged.relation_type_uid = relationType.value
+
+  const cur = route.query as Record<string, unknown>
+  const same =
+    Object.keys(merged).length === Object.keys(cur).length &&
+    Object.entries(merged).every(([k, v]) => String(cur[k] ?? '') === v)
+  if (same) return
+  void router.replace({ path: route.path, query: merged })
+}
+
+/** 从 URL 恢复视图状态（刷新 / 从详情返回 / 打开分享链接都走这里） */
+function restoreStateFromUrl(): void {
+  const p = Number(route.query.page)
+  if (Number.isFinite(p) && p >= 1) page.value = Math.floor(p)
+  const s = Number(route.query.size)
+  if (Number.isFinite(s) && s > 0) size.value = Math.floor(s)
+  const rt = route.query.relation_type_uid
+  if (typeof rt === 'string') relationType.value = rt
+}
+
+// 三个状态任一变化即写回（用 watch 而非在每个事件处理里散着调，避免漏掉某条路径）
+watch([page, size, relationType], syncStateToUrl)
 
 /**
  * 关系类型 UID → 中文。当前库中仅有 ecs_disk 一种实例关系；
@@ -160,6 +207,8 @@ const onFilterChange = () => {
 }
 
 onMounted(() => {
+  // 先按 URL 恢复再拉数据：否则会先拉默认的第 1 页、再因恢复页码拉第二遍（多一次请求且界面闪一下）
+  restoreStateFromUrl()
   load()
 })
 // 卸载时作废在途请求，避免组件已销毁还写状态

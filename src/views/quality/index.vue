@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getOrphanSourcesApi, getQualityOverviewApi, listQualityIssuesApi, listSyncIssuesApi, type OrphanModelGroup, type QualityIssue, type QualityOverview, type SyncQualityIssue } from '@/api/quality'
 import { CircleCheck, Warning, WarningFilled, Connection, Box, RefreshRight } from '@element-plus/icons-vue'
@@ -18,6 +19,7 @@ const liveStatusText = computed(() => {
   return `共 ${total.value} 条`
 })
 const activeType = ref<'orphan_instance' | 'missing_field' | 'dangling_relation' | ''>('')
+
 
 /**
  * 孤儿实例来源（按缺失模型聚合）。
@@ -58,6 +60,67 @@ const syncVisible = ref(false)
 const syncLoading = ref(false)
 const syncError = ref<string | null>(null)
 const syncPage = ref({ offset: 0, limit: 20 })
+
+// ---- URL 同步（iter353，T12）----
+//
+// 为什么需要它：本页有「问题类型筛选 + 两个独立分页（质量清单 / 同步清单）」，
+// 此前**只存在组件内 ref 里**。实测后果：筛好「缺失字段」并翻到第 3 页，
+// 刷新 / 切走再回来 → 归零到「全部类型 + 第 1 页」，且无法分享该视图。
+//
+// 口径与 `views/cmdb/instances/index.vue` 的 `syncStateToUrl` 一致：
+//   `replace` 而非 push、只写非默认值、只增删自己的 key、写前比对。
+//
+// 两个分页用不同前缀区分（`page`/`size` 为质量清单，`spage`/`ssize` 为同步清单），
+// 否则两个列表会互相覆盖同一组 query。
+const route = useRoute()
+const router = useRouter()
+
+function syncStateToUrl(): void {
+  const merged: Record<string, string> = {}
+  for (const [k, v] of Object.entries(route.query)) {
+    if (typeof v === 'string') merged[k] = v
+  }
+  for (const k of ['type', 'page', 'size', 'spage', 'ssize']) delete merged[k]
+
+  if (activeType.value) merged.type = activeType.value
+
+  const pageNo = Math.floor(page.value.offset / page.value.limit) + 1
+  if (pageNo > 1) merged.page = String(pageNo)
+  if (page.value.limit !== 20) merged.size = String(page.value.limit)
+
+  const syncPageNo = Math.floor(syncPage.value.offset / syncPage.value.limit) + 1
+  if (syncPageNo > 1) merged.spage = String(syncPageNo)
+  if (syncPage.value.limit !== 20) merged.ssize = String(syncPage.value.limit)
+
+  const cur = route.query as Record<string, unknown>
+  const same =
+    Object.keys(merged).length === Object.keys(cur).length &&
+    Object.entries(merged).every(([k, v]) => String(cur[k] ?? '') === v)
+  if (same) return
+  void router.replace({ path: route.path, query: merged })
+}
+
+/** 从 URL 恢复视图状态（刷新 / 切回本页 / 打开分享链接都走这里） */
+function restoreStateFromUrl(): void {
+  const t = route.query.type
+  if (t === 'orphan_instance' || t === 'missing_field' || t === 'dangling_relation') {
+    activeType.value = t
+  }
+  const limit = Number(route.query.size)
+  if (Number.isFinite(limit) && limit > 0) page.value.limit = Math.floor(limit)
+  const pageNo = Number(route.query.page)
+  if (Number.isFinite(pageNo) && pageNo >= 1) {
+    page.value.offset = (Math.floor(pageNo) - 1) * page.value.limit
+  }
+  const ssize = Number(route.query.ssize)
+  if (Number.isFinite(ssize) && ssize > 0) syncPage.value.limit = Math.floor(ssize)
+  const spage = Number(route.query.spage)
+  if (Number.isFinite(spage) && spage >= 1) {
+    syncPage.value.offset = (Math.floor(spage) - 1) * syncPage.value.limit
+  }
+}
+
+watch([activeType, page, syncPage], syncStateToUrl, { deep: true })
 
 const SYNC_ISSUE_META: Record<string, { label: string; color: string }> = {
     required: { label: '必填缺失', color: 'var(--accent-red)' },
@@ -172,7 +235,11 @@ const formatSyncTime = (ms: number) => {
     return `${d.getFullYear()}/${p(d.getMonth() + 1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
 }
 
-onMounted(() => { loadOverview() })
+onMounted(() => {
+  // 先按 URL 恢复再拉数据（否则先拉默认视图、再因恢复状态拉第二遍，多一次请求且闪一下）
+  restoreStateFromUrl()
+  loadOverview()
+})
 </script>
 
 <template>

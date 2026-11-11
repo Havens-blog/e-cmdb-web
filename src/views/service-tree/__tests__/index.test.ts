@@ -5,6 +5,7 @@
  * AC2 关联资产 tab 聚合语义（include_children 默认开 + 来源节点列）；
  * AC3 环境疑异资产行标红 + tooltip 疑异原因。
  */
+import { createMemoryHistory, createRouter } from 'vue-router'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import ElementPlus from 'element-plus'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -145,9 +146,17 @@ const wrappers: VueWrapper[] = []
 async function mountPage(): Promise<VueWrapper> {
     const pinia = createPinia()
     setActivePinia(pinia)
+    // iter353：页面新增 URL 同步（T12）后依赖 useRoute/useRouter，必须注入。
+    // 用真 router（memory history）而不是手搓 inject key —— 后者依赖 vue-router 内部符号。
+    const router = createRouter({
+        history: createMemoryHistory(),
+        routes: [{ path: '/service-tree', component: { template: '<div />' } }],
+    })
+    await router.push('/service-tree')
+    await router.isReady()
     const wrapper = mount(ServiceTreePage, {
         attachTo: document.body,
-        global: { plugins: [pinia, ElementPlus] }
+        global: { plugins: [pinia, ElementPlus, router] }
     })
     wrappers.push(wrapper)
     await flushPromises()
