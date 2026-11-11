@@ -190,10 +190,20 @@ const routes: RouteRecordRaw[] = [
     { path: '/cmdb/instances', redirect: '/instances' },
     { path: '/cmdb/relations', redirect: '/relations' },
     { path: '/cmdb/topology', redirect: '/models/topology' },
-    // 兜底：未知路径回资源模型
+    // 兜底：未知路径渲染 404 页（iter339）
+    //
+    // **原先这里是 `redirect: '/models'`** —— 实测后果很具体：输错地址会被静默送到
+    // 「资源模型」页，**地址栏也跟着变成 `/cmdb/models`**，用户既不知道自己输错了什么、
+    // 也无法回头检查拼写，还会误以为资源模型就是他要找的页面（可能在这里继续操作）。
+    //
+    // 改为渲染 404 页后与 `e-cam-web` / `haven-console` 行为一致（同轮实测两者都是
+    // 原地显示 404、地址栏不变）—— 三站面对「地址打错」应给同一个回答。
+    //
+    // 必须放在**最后一条**：vue-router 按数组顺序匹配，catch-all 若在前面会吃掉所有路由。
     {
         path: '/:pathMatch(.*)*',
-        redirect: '/models',
+        name: 'not-found',
+        component: () => import('@/views/error/NotFound.vue'),
     },
 ]
 
