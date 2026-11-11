@@ -10,6 +10,13 @@ const overview = ref<QualityOverview | null>(null)
 const overviewError = ref<string | null>(null)
 const issues = ref<QualityIssue[]>([])
 const total = ref(0)
+
+/** 读屏播报文案（iter346）：加载中 → 空/条数，与 models 页同口径 */
+const liveStatusText = computed(() => {
+  if (loading.value) return '正在加载数据质量…'
+  if (total.value === 0) return '暂无质量数据'
+  return `共 ${total.value} 条`
+})
 const activeType = ref<'orphan_instance' | 'missing_field' | 'dangling_relation' | ''>('')
 
 /**
@@ -170,6 +177,10 @@ onMounted(() => { loadOverview() })
 
 <template>
   <div class="quality" v-loading="loading">
+    <!-- 读屏播报（iter346）：本页此前无 live region。LiveStatus 是本仓既有共享组件，
+         16 个视图中原先只有 8 个接入，本页被漏掉。 -->
+    <LiveStatus :text="liveStatusText" />
+
     <div class="page-head">
       <div>
         <h1 class="page-title">数据质量</h1>

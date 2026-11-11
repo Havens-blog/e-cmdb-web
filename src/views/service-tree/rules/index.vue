@@ -1,6 +1,9 @@
 <template>
   <PageContainer>
     <div class="rules-page">
+      <!-- 读屏播报（iter346）：本页此前无 live region。LiveStatus 是本仓既有共享组件，
+           16 个视图中原先只有 8 个接入。 -->
+      <LiveStatus :text="liveStatusText" />
       <!-- 页面头部 -->
       <div class="page-header">
         <div class="header-left">
@@ -198,7 +201,7 @@ import {
 import type { BindingRule, Environment } from '@/api/types/service-tree'
 import { Plus, RefreshLeft, Search, Switch, VideoPlay } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { onMounted, reactive, ref } from 'vue'
+import { onMounted, reactive, computed, ref } from 'vue'
 import { formatDateTime } from '@/utils/format'
 import ExecuteConfirmDialog from './components/ExecuteConfirmDialog.vue'
 import RebindDialog from './components/RebindDialog.vue'
@@ -242,6 +245,13 @@ const pagination = reactive({
 const ruleList = ref<BindingRuleWithStats[]>([])
 const environmentList = ref<Environment[]>([])
 const loading = ref(false)
+
+/** 读屏播报文案（iter346）：加载中 → 空/条数 */
+const liveStatusText = computed(() => {
+  if (loading.value) return '正在加载绑定规则列表…'
+  if (ruleList.value.length === 0) return '暂无绑定规则'
+  return `共 ${ruleList.value.length} 条绑定规则`
+})
 /** 规则列表加载失败文案（null = 无错误） */
 const loadError = ref<string | null>(null)
 const executing = ref(false)

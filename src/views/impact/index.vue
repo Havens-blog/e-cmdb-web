@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, computed, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts'
 import { getImpactApi, type ImpactGraph } from '@/api/impact'
@@ -8,6 +8,15 @@ import { Aim, Search, WarningFilled } from '@element-plus/icons-vue'
 
 const depth = ref(3)
 const loading = ref(false)
+
+/** 读屏播报文案（iter346） */
+const liveStatusText = computed(() => {
+  if (loading.value) return '正在计算影响范围…'
+  // 非加载态也要给结论，否则 live region 恒为空 = 读屏什么也听不到（与 organizations 那次同类）
+  if (analyzeError.value) return analyzeError.value
+  if (!graph.value) return '尚未开始分析，请先搜索并选择实例'
+  return `共 ${graph.value.nodes.length} 个受影响节点`
+})
 const graph = ref<ImpactGraph | null>(null)
 /**
  * 查询类错误态（就地提示，不做整页错误态）。
@@ -107,6 +116,10 @@ onBeforeUnmount(() => { window.removeEventListener('resize', onResize); chart?.d
 
 <template>
   <div class="impact">
+    <!-- 读屏播报（iter346）：本页此前无 live region。LiveStatus 是本仓既有共享组件，
+         16 个视图中原先只有 8 个接入。 -->
+    <LiveStatus :text="liveStatusText" />
+
     <div class="page-head">
       <h1 class="page-title">影响分析</h1>
       <p class="page-subtitle">评估配置变更的波及范围（blast radius）</p>

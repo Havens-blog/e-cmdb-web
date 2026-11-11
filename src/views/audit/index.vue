@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { listChangesApi, getChangeSummaryApi, listAuditLogsApi, type ChangeRecord, type ChangeSummary, type AuditLog } from '@/api/audit'
 import { buildAuditLogParams } from '@/utils/auditLogParams'
@@ -11,6 +11,15 @@ const records = ref<ChangeRecord[]>([])
 const total = ref(0)
 /** 后端 total 返回 -1 表示「总数统计超时、不可用」，此时不显示分页器并给出提示 */
 const totalUnknown = ref(false)
+
+/** 读屏播报文案（iter346）：加载中 → 失败 → 空 → 条数，与 models 页同口径 */
+const liveStatusText = computed(() => {
+  if (loading.value) return '正在加载审计日志…'
+  const count = activeTab.value === 'change' ? records.value.length : 0
+  if (listError.value) return listError.value
+  if (count === 0) return '没有匹配的审计日志'
+  return `共 ${total.value} 条审计日志`
+})
 /** 变更列表加载失败文案（null = 无错误）。与 models / relations / instances / dns 的既有错误态一致 */
 const listError = ref<string | null>(null)
 const summary = ref<ChangeSummary | null>(null)
@@ -176,6 +185,12 @@ onMounted(load)
 
 <template>
   <div class="audit" v-loading="loading">
+    <!-- 读屏播报（iter346）：本页此前无 live region —— v-loading 只有视觉遮罩与转圈图标，
+         读屏用户感知不到「正在加载」与「加载完成」。LiveStatus 是本仓既有共享组件，
+         16 个视图中原先只有 8 个接入，本页与 discovery/dns/impact/open-api/quality 等漏掉。
+         播报顺序：加载中 → 失败（优先，避免与错误态自相矛盾）→ 空 → 条数。 -->
+    <LiveStatus :text="liveStatusText" />
+
     <div class="page-head">
       <div>
         <h1 class="page-title">审计日志</h1>
