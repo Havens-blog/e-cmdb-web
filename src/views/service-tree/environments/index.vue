@@ -1,6 +1,9 @@
 <template>
   <PageContainer>
     <div class="environments-page">
+      <!-- 读屏播报（iter346）：本页此前无 live region。LiveStatus 是本仓既有共享组件，
+           16 个视图中原先只有 8 个接入。 -->
+      <LiveStatus :text="liveStatusText" />
       <!-- 页面头部 -->
       <div class="page-header">
         <div class="header-left">
@@ -171,6 +174,13 @@ const pagination = reactive({
 // 数据
 const environmentList = ref<Environment[]>([])
 const loading = ref(false)
+
+/** 读屏播报文案（iter346）：加载中 → 空/条数 */
+const liveStatusText = computed(() => {
+  if (loading.value) return '正在加载环境列表…'
+  if (environmentList.value.length === 0) return '暂无环境'
+  return `共 ${environmentList.value.length} 条环境`
+})
 /** 环境列表加载失败文案（null = 无错误） */
 const loadError = ref<string | null>(null)
 

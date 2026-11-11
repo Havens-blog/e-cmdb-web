@@ -54,6 +54,14 @@ const recordsLoading = ref(false)
 const recordTotal = ref(0)
 /** 解析记录加载失败文案（null = 无错误） */
 const recordsError = ref<string | null>(null)
+
+/** 读屏播报文案（iter346）：两个数据区的加载/错误/条数合并播报 */
+const liveStatusText = computed(() => {
+    if (recordsError.value) return recordsError.value
+    if (recordsLoading.value) return '正在加载 DNS 解析记录…'
+    if (records.value.length === 0) return '暂无解析记录'
+    return `共 ${records.value.length} 条解析记录`
+})
 const recordQuery = reactive({
     keyword: '',
     record_type: '',
@@ -199,6 +207,11 @@ onMounted(() => {
 
 <template>
     <div class="dns-page">
+        <!-- 读屏播报（iter346）：本页此前无 live region。LiveStatus 是本仓既有共享组件，
+             16 个视图中原先只有 8 个接入。本页有两个数据区（域名 / 解析记录），
+             按各自 loading 与错误态播报。 -->
+        <LiveStatus :text="liveStatusText" />
+
         <div class="page-head">
             <div>
                 <h2>DNS 解析</h2>

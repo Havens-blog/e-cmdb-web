@@ -14,6 +14,12 @@ import { Cloudy, RefreshRight, VideoPlay } from '@element-plus/icons-vue'
 import { formatTimestamp } from '@/utils/time'
 
 const loading = ref(false)
+
+/** 读屏播报文案（iter346）：加载中 → 空/条数，与 models 页同口径 */
+const liveStatusText = computed(() => {
+  if (loading.value) return '正在加载发现同步…'
+  return '暂无可同步的发现任务'
+})
 const syncing = ref(false)
 const snapshot = ref<DiscoverySnapshotStatus | null>(null)
 const entries = ref<DiscoveryPreviewEntry[]>([])
@@ -119,6 +125,10 @@ onBeforeUnmount(stopPolling)
 
 <template>
   <div class="discovery" v-loading="loading">
+    <!-- 读屏播报（iter346）：本页此前无 live region。LiveStatus 是本仓既有共享组件，
+         16 个视图中原先只有 8 个接入，本页被漏掉。 -->
+    <LiveStatus :text="liveStatusText" />
+
     <div class="page-head">
       <div>
         <h1 class="page-title">发现同步</h1>
