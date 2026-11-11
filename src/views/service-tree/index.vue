@@ -608,6 +608,7 @@ import { SERVICE_NODE_STATUS_LABELS, labelOfLenient } from '@/utils/fieldLabels'
 import type { ElTree } from 'element-plus'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import BindResourceDialog from './components/BindResourceDialog.vue'
 import MoveNodeDialog from './components/MoveNodeDialog.vue'
 import NodeFormDialog from './components/NodeFormDialog.vue'
@@ -694,6 +695,50 @@ const nodeAssetList = ref<NodeAssetVO[]>([])
 const assetsLoading = ref(false)
 const assetTotal = ref(0)
 const assetCurrentPage = ref(1)
+
+// ---- URL 同步（iter353，T12）----
+//
+// 为什么需要它：本页有「树搜索关键词 + 资产分页」两种视图状态，此前**只存在组件内 ref 里**。
+// 实测后果：搜好节点、翻到某页资产，切走再回来 / 刷新 → 搜索词与页码归零，
+// 且无法把「某节点下的第 3 页资产」这个视图分享给同事。
+//
+// 口径与 `views/cmdb/instances/index.vue` 的 `syncStateToUrl` 一致：
+//   `replace` 而非 push、只写非默认值、只增删自己的 key、写前比对。
+//
+// **不同步 `assetFilters`**（asset_type 等）与「当前选中节点」：
+// 前者是可以做，但本页筛选维度多、且 `asset_type` 是联合类型，需要逐字段 codec；
+// 后者是「选中节点」这种**导航态**，写进 URL 会让「刷新后自动选中某节点」
+// 变成隐式行为 —— 用户可能已经忘了自己选过它。**本轮只做最明确的两项。**
+const route = useRoute()
+const router = useRouter()
+
+function syncStateToUrl(): void {
+  const merged: Record<string, string> = {}
+  for (const [k, v] of Object.entries(route.query)) {
+    if (typeof v === 'string') merged[k] = v
+  }
+  for (const k of ['keyword', 'page']) delete merged[k]
+
+  if (searchKeyword.value) merged.keyword = searchKeyword.value
+  if (assetCurrentPage.value > 1) merged.page = String(assetCurrentPage.value)
+
+  const cur = route.query as Record<string, unknown>
+  const same =
+    Object.keys(merged).length === Object.keys(cur).length &&
+    Object.entries(merged).every(([k, v]) => String(cur[k] ?? '') === v)
+  if (same) return
+  void router.replace({ path: route.path, query: merged })
+}
+
+/** 从 URL 恢复视图状态（刷新 / 切回本页 / 打开分享链接都走这里） */
+function restoreStateFromUrl(): void {
+  const kw = route.query.keyword
+  if (typeof kw === 'string') searchKeyword.value = kw
+  const p = Number(route.query.page)
+  if (Number.isFinite(p) && p >= 1) assetCurrentPage.value = Math.floor(p)
+}
+
+watch([searchKeyword, assetCurrentPage], syncStateToUrl)
 const assetFilters = reactive<ListNodeAssetsParams>({
   asset_type: undefined,
   env_id: undefined,
@@ -1341,6 +1386,8 @@ const handleBindSuccess = () => {
 }
 
 onMounted(() => {
+  // 先按 URL 恢复（搜索词 / 资产页码）再拉数据，避免「先按默认拉一遍、再因恢复拉第二遍」
+  restoreStateFromUrl()
   loadTree()
   loadEnvironments()
   document.addEventListener('click', handleClickOutside)

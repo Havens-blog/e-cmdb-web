@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { listChangesApi, getChangeSummaryApi, listAuditLogsApi, type ChangeRecord, type ChangeSummary, type AuditLog } from '@/api/audit'
 import { buildAuditLogParams } from '@/utils/auditLogParams'
@@ -33,10 +34,73 @@ const query = ref({
 })
 const page = ref({ offset: 0, limit: 20 })
 
+
 // ==================== 审计类型 tab ====================
 // 变更审计（ChangeRecord，字段级 old→new）+ 操作审计（AuditLog，API 级），
 // 两类同属「全平台审计」，聚合到本页用 tab 切换。
 const activeTab = ref<'change' | 'operation'>('change')
+
+// ---- URL 同步（iter353，T12）----
+//
+// 为什么需要它：本页有「页签 + 资产 ID + 字段名 + 页码 + 每页条数」多种视图状态，
+// 此前**只存在组件内 ref 里**。实测后果：筛好「某资产 + 某字段 + 翻到第 4 页」后
+// 刷新 / 切走再回来 → 全部归零，且无法把该视图的链接发给同事追查问题。
+// 审计页尤其吃亏：查问题往往要和别人共享同一个筛选视图。
+//
+// 口径与 `views/cmdb/instances/index.vue` 的 `syncStateToUrl` 一致：
+//   `replace` 而非 push、只写非默认值、只增删自己的 key、写前比对。
+//
+// **刻意不同步 `timeRange`**：它是 `[Date, Date]` 对象，序列化进 URL 需要额外的
+// 编解码约定（时区、格式、非法值处理），而本页已有一个独立的「时间范围」控件，
+// 其默认值（最近 7 天）是相对当前时刻的 —— 把相对时间写进 URL 会导致
+// 「昨天分享的链接今天打开，看到的范围悄悄变了」。**宁可不同步，也不要不同步得似是而非。**
+const route = useRoute()
+const router = useRouter()
+
+function syncStateToUrl(): void {
+  const merged: Record<string, string> = {}
+  for (const [k, v] of Object.entries(route.query)) {
+    if (typeof v === 'string') merged[k] = v
+  }
+  for (const k of ['tab', 'asset_id', 'field_name', 'page', 'size']) delete merged[k]
+
+  if (activeTab.value !== 'change') merged.tab = activeTab.value
+  if (query.value.asset_id) merged.asset_id = query.value.asset_id
+  if (query.value.field_name) merged.field_name = query.value.field_name
+  if (page.value.limit !== 20) merged.size = String(page.value.limit)
+  // offset 换算成页码（第 1 页不写，保持链接干净）
+  const pageNo = Math.floor(page.value.offset / page.value.limit) + 1
+  if (pageNo > 1) merged.page = String(pageNo)
+
+  const cur = route.query as Record<string, unknown>
+  const same =
+    Object.keys(merged).length === Object.keys(cur).length &&
+    Object.entries(merged).every(([k, v]) => String(cur[k] ?? '') === v)
+  if (same) return
+  void router.replace({ path: route.path, query: merged })
+}
+
+/** 从 URL 恢复视图状态（刷新 / 切回本页 / 打开分享链接都走这里） */
+function restoreStateFromUrl(): void {
+  const tab = route.query.tab
+  if (tab === 'operation' || tab === 'change') activeTab.value = tab
+  const aid = route.query.asset_id
+  if (typeof aid === 'string') query.value.asset_id = aid
+  const fn = route.query.field_name
+  if (typeof fn === 'string') query.value.field_name = fn
+
+  const limit = Number(route.query.size)
+  if (Number.isFinite(limit) && limit > 0) page.value.limit = Math.floor(limit)
+  const pageNo = Number(route.query.page)
+  if (Number.isFinite(pageNo) && pageNo >= 1) {
+    page.value.offset = (Math.floor(pageNo) - 1) * page.value.limit
+  }
+}
+
+// 任一视图状态变化即写回（用 watch 统一接管，避免每个事件处理里散着调而漏掉某条路径）
+watch([activeTab, () => query.value.asset_id, () => query.value.field_name, page], syncStateToUrl, {
+  deep: true,
+})
 const auditLogs = ref<AuditLog[]>([])
 const auditLogsTotal = ref(0)
 const auditLogsLoading = ref(false)
@@ -180,7 +244,11 @@ function fmtTime(ms?: number): string {
 
 const truncate = (s: string, n = 42) => (s.length > n ? s.slice(0, n) + '…' : s)
 
-onMounted(load)
+onMounted(() => {
+  // 先按 URL 恢复再拉数据：否则会先拉默认视图、再因恢复状态拉第二遍（多一次请求且界面闪一下）
+  restoreStateFromUrl()
+  void load()
+})
 </script>
 
 <template>
