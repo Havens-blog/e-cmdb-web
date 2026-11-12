@@ -71,6 +71,29 @@ button {
   font-family: inherit;
 }
 
+/**
+ * 键盘焦点环（iter377 / WCAG 2.4.7「焦点可见」）。
+ *
+ * 缺陷：上面的 `button { outline: none }` 把**所有按钮**的默认焦点环都清掉了，
+ * 而本仓**全仓没有任何 `:focus-visible` 补偿**（对比 e-cam-web 有 19 个文件，
+ * 是 iter320 在那边统一补过的）。
+ *
+ * 实测（iter377，/cmdb/models，真实浏览器聚焦后读 computed style）：
+ *   原生 `<button>` 共 **88 个**（含 v-for 渲染的 85 个模型卡片「更多」按钮），
+ *   **全部 `outline-style: none`、`box-shadow: none`** → 键盘用户 Tab 过去时**完全看不出焦点在哪**。
+ *   （Element Plus 的 `el-button` 自带焦点样式，不受影响 —— 出问题的只有自己写的原生 button。）
+ *
+ * 修法：与 e-cam-web 完全一致 —— 2px 实线 + 2px 外扩，只对键盘生效（`:focus-visible`），
+ * 鼠标点击不出现焦点环，所以不影响现有视觉。
+ */
+button:focus-visible,
+[role='button']:focus-visible,
+a:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
 // ==================== 输入框重置 ====================
 input, textarea {
   outline: none;
