@@ -187,7 +187,7 @@ onMounted(() => { loadTokens(); loadWebhooks() })
       <el-tab-pane label="API Token" name="tokens">
         <div class="toolbar">
           <el-button type="primary" :icon="Plus" @click="tokenDialogVisible = true">创建 Token</el-button>
-          <el-button :icon="RefreshRight" circle @click="loadTokens" />
+          <el-button :icon="RefreshRight" circle @click="loadTokens" aria-label="刷新 Token 列表" />
         </div>
 
         <el-table :data="tokens" v-loading="tokenLoading" style="width: 100%">
@@ -228,7 +228,7 @@ onMounted(() => { loadTokens(); loadWebhooks() })
       <el-tab-pane label="Webhook 订阅" name="webhooks">
         <div class="toolbar">
           <el-button type="primary" :icon="Plus" @click="openCreateWebhook">创建订阅</el-button>
-          <el-button :icon="RefreshRight" circle @click="loadWebhooks" />
+          <el-button :icon="RefreshRight" circle @click="loadWebhooks" aria-label="刷新 Webhook 列表" />
         </div>
 
         <el-table :data="webhooks" v-loading="webhookLoading" style="width: 100%">
@@ -276,7 +276,7 @@ onMounted(() => { loadTokens(); loadWebhooks() })
         <div class="token-result-title">Token 创建成功（仅显示一次）</div>
         <div class="token-box">
           <code>{{ createdToken }}</code>
-          <el-button :icon="DocumentCopy" circle @click="copyToken" />
+          <el-button :icon="DocumentCopy" circle @click="copyToken" aria-label="复制 Token" />
         </div>
       </div>
       <template #footer>

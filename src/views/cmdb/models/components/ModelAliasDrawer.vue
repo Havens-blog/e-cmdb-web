@@ -130,7 +130,7 @@ const totalMigrated = computed(() => migrateResult.value ? `${migrateResult.valu
         </el-table-column>
         <el-table-column label="" width="60" align="center">
           <template #default="{ row }">
-            <el-button text type="danger" size="small" :icon="Delete" @click="handleDelete(row)" />
+            <el-button text type="danger" size="small" :icon="Delete" @click="handleDelete(row)" aria-label="删除别名" />
           </template>
         </el-table-column>
       </el-table>

@@ -253,7 +253,7 @@ onMounted(() => {
         <h1 class="page-title">数据质量</h1>
         <p class="page-subtitle">持续评估配置事实源的完整性与一致性</p>
       </div>
-      <el-button class="refresh-btn" :icon="RefreshRight" circle @click="loadOverview" />
+      <el-button class="refresh-btn" :icon="RefreshRight" circle @click="loadOverview" aria-label="刷新概览" />
     </div>
 
     <!-- 错误态优先于空态：概览失败时所有指标卡都无值，不能只显示空白 -->
