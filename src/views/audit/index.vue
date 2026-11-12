@@ -264,7 +264,7 @@ onMounted(() => {
         <h1 class="page-title">审计日志</h1>
         <p class="page-subtitle">全平台审计：变更审计（字段级）与操作审计（API 级）统一入口</p>
       </div>
-      <el-button class="refresh-btn" :icon="RefreshRight" circle @click="load" />
+      <el-button class="refresh-btn" :icon="RefreshRight" circle @click="load" aria-label="刷新审计日志" />
     </div>
 
     <el-tabs v-model="activeTab" @tab-change="handleTabChange">

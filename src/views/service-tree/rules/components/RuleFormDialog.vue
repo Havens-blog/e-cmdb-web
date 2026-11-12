@@ -129,6 +129,7 @@
                 type="danger"
                 text
                 :icon="Delete"
+                aria-label="删除规则"
                 @click="removeCondition(index)"
               />
             </div>

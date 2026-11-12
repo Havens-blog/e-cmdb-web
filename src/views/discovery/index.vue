@@ -136,7 +136,7 @@ onBeforeUnmount(stopPolling)
       </div>
       <div class="head-actions">
         <el-button :icon="VideoPlay" :loading="syncing" @click="handleSync">触发增量同步</el-button>
-        <el-button :icon="RefreshRight" circle @click="load" />
+        <el-button :icon="RefreshRight" circle @click="load" aria-label="刷新" />
       </div>
     </div>
 
