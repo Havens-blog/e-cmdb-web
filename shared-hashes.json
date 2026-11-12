@@ -98,7 +98,7 @@
       "category": "design-tokens",
       "sourceCommit": "ff629baa13e9ba927bc5d22b06da8bd27b226abc",
       "sourceCommitDate": "2026-09-20",
-      "sha256": "a1ab67d49e50cb845a3c5182af3d6737755e3b8b64d4ea5f8fa0966d29c15892",
+      "sha256": "c9ae4918a303f3316ad3fd461c42778a0a24bfc43ca6375b32ebaa5de492d573",
       "note": "**独立维护（主题架构不同，2026-11-11 / iter331 定案）**：两仓的**主题令牌来源根本不同**，本文件职责是\"在各自架构下组装全局样式\"，不可合并。\n\n**本仓（e-cmdb-web）**：主题令牌唯一来源是 **`@haven/ui`** —— `src/main.ts:7` 有 `import '@haven/ui/theme'`，注释明确写着「主题令牌（单一来源 @haven/ui；在 index.scss 之前加载）」。令牌定义在 `haven-ui/src/theme/tokens.scss`，本仓**没有也不会**有 `theme-variables.scss`（已确认该文件在本仓不存在，且 `variables.scss` 不含任何 CSS 自定义属性）。因此本仓 `index.scss` 只 `@import` 三个：`variables` / `mixins` / `element-theme`。\n\n**e-cam-web**：自带 `theme-variables.scss`，其 `index.scss` `@import` 四个（多一个 `theme-variables`），并在其中定义全部主题令牌。\n\n**若强行同步**：CAM 版的 `@import './theme-variables.scss'` 在本仓会因文件不存在而**编译失败**。这是架构级差异，不是拷贝落后。跳过源漂移检查，**本仓 sha256 仍被校验**。",
       "independentlyMaintained": true
     },
